@@ -169,8 +169,8 @@ All decided Sat 14 Nov 2026:
 ## Session Notes
 
 - The repo is a fresh `create-next-app` (Next 16.4.6, React 19.3, Tailwind
-  4.3). Work happens on the branch `feature/trustpath-build`, with one commit
-  per unit.
+  4.3). Each unit is built on its own branch `unit/NN-name` and
+  merged into `main` with `--no-ff` once verified.
 - The submission email needs:
   - university
   - team name

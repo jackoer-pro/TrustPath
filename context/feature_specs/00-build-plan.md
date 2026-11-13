@@ -22,7 +22,13 @@ counts as done.
 5. **Record.** Tick the unit in `progress-tracker.md`, move it to Completed,
    and note any decisions. Add a short "Built" note at the end of the spec:
    what was built and how it differs from the plan.
-6. **Commit and push.** One commit per unit.
+6. **Push and merge.** Each unit is built on its own branch
+   `unit/NN-name`, cut from an up-to-date `main`. When the unit is verified:
+   commit, push the branch, then merge it into `main` with
+   `git merge --no-ff` and push `main`. Every unit is then one merge commit
+   on `main`, so `git log --first-parent main` reads as the unit list, and a
+   unit that breaks the app can be found and reverted on its own
+   (`git revert -m 1 <merge>`).
 7. **Next.** Write the spec for the next unit and go back to step 1.
 
 ## Spec Template

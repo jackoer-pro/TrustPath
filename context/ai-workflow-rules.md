@@ -111,7 +111,9 @@ A unit is done only when all of these are true:
 ## Demo-Day Discipline
 
 - After each completed unit:
-  1. Commit to the feature branch.
+  1. Commit to the unit branch `unit/NN-name`, push it, merge it into
+     `main` with `--no-ff` and push `main` (see `00-build-plan.md` → The
+     Loop).
   2. Push.
   3. Confirm that the Vercel preview works once deployment exists.
 - Keep the "Reset demo" path working at all times. A broken reset blocks
