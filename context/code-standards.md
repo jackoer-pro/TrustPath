@@ -155,6 +155,6 @@ export async function POST(req: Request, ctx: RouteContext<'/api/actions/[id]/ap
 - `lib/db.ts`, `lib/http.ts`, `lib/audit.ts`, `lib/money.ts` — Shared
   infrastructure.
 - `supabase/migrations/` — SQL.
-- `context/` — Context files and `specs/`.
+- `context/` — Context files and `feature_specs/`.
 - File names are `kebab-case.ts`. React components are `PascalCase.tsx`, one
   component per file.

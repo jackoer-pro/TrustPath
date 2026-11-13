@@ -4,87 +4,90 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
-- Planning complete. Context files written on Sat 14 Nov; awaiting the
-  developer's review. Build not started.
+- Phase A (Foundation). Unit 01 done. Unit 02 spec drafted, awaiting
+  clarification.
 
 ## Current Goal
 
-- Approve the six context files, then write `context/specs/00-build-plan.md`
-  and the spec for Unit 01.
+- Answer the "Clarify before building" questions in
+  `context/feature_specs/02-database.md`, then build Unit 02.
 
 ## Schedule
 
 | When                  | Target                                                                                     | Who                                   |
 | --------------------- | ------------------------------------------------------------------------------------------ | ------------------------------------- |
-| Sat 14 Nov            | Context approved; Units 01–04                                                              | Developer + AI                        |
-| Sun 15 Nov            | Units 05–08; first Vercel deploy                                                           | Developer + AI                        |
+| Sat 14 Nov            | Context approved; Units 01–08                                                              | Developer + AI                        |
+| Sun 15 Nov            | Units 09–18 (first Vercel deploy is Unit 12)                                                           | Developer + AI                        |
 | Sun 15 Nov            | Film scam-call reenactment (≤ 45 s); draft video script                                    | Teammate                              |
-| Mon 16 Nov 10am–3pm   | Units 09–10; mentor feedback; ask the lead mentor about pre-event work; verify GEL colours | Developer + AI; teammate tests the golden path |
-| Mon 16 Nov evening    | Unit 11 rehearsal and evaluation cases; fix list                                           | Both                                  |
+| Mon 16 Nov 10am–3pm   | Units 19–26; mentor feedback; ask the lead mentor about pre-event work; verify GEL colours | Developer + AI; teammate tests the golden path |
+| Mon 16 Nov evening    | Unit 27 rehearsal and evaluation cases; fix list                                           | Both                                  |
 | Tue 17 Nov 10am–12pm  | Fixes only. **Feature freeze 12:00pm**                                                     | Developer                             |
 | Tue 17 Nov 1–3pm      | Screen-record the golden path, record narration, edit (≤ 10 min), upload to YouTube        | Teammate leads; developer drives demo |
 | Tue 17 Nov by 3:30pm  | Submission email sent (hard deadline 4:00pm)                                               | Both                                  |
 | Thu 19 Nov 2pm        | Shortlist notice                                                                           | —                                     |
 | Fri 20 Nov 9:30am     | 5-minute live pitch at the Westpac Gold Coast Engineering Hub (if shortlisted)             | Both                                  |
 
-## Build Order (units — each gets a spec in `context/specs/`)
+## Build Order
 
-1. **01 App shell and tokens**
-   - Tokens and fonts in `globals.css` and `layout.tsx`.
-   - Routes `/`, `/protect`, `/ops`, `/demo`, `/shop/[productId]` with static
-     placeholder data.
-   - Phone frame, tab bar, `components/ui` primitives.
-2. **02 Database and state API**
-   - Supabase project.
-   - Migration: tables, CHECK constraints, RLS, `complete_action()`,
-     `reset_demo()` with the full seed.
-   - `lib/db.ts`, `lib/http.ts`, `lib/audit.ts`, `lib/money.ts`.
-   - `GET /api/customer/state`, `POST /api/demo/reset`.
-   - Home shows live balances.
-3. **03 Trust engine (pure)**
-   - `policy.ts`, `provenance.ts`, `content-scanner.ts`, `hash.ts`, plus
-     `node --test` tests and the `npm test` script.
-4. **04 Actions and Trust Receipt**
-   - `prepareTransfer` and `preparePurchase` services.
-   - Approve and cancel routes with PIN, hash and expiry checks.
-   - `TrustReceipt` and `PinDialog`.
-   - Verify with a temporary dev-only trigger, removed in 05.
-5. **05 AI assistant**
-   - `deepseek.ts`, tools with Zod, the agent loop, prompts, the fallback
-     parser, `/api/chat` and the chat UI.
-   - Done when golden-path Act 1 passes.
-6. **06 Shop and agent hijack**
-   - Catalogue, `/shop/aurora-anc` with the hidden instruction,
-     `view_product`, `prepare_purchase`, `ShieldCard`.
-   - `injection_blocked` incident and `/api/demo/compromised-agent`.
-   - Done when Act 2 passes.
-7. **07 Fraud engine**
-   - `rules.ts` with tests, `process-authorization.ts` and the simulate route.
-   - Notifications, `AlertBanner`, the respond route.
-   - Done when Act 3 steps 10–11 pass.
-8. **08 Emergency protection and RAG**
-   - `report_account_compromise`, `emergency.ts`, knowledge docs,
-     `search_safety_guide`, the Protect tab.
-   - Done when Act 3 steps 12–16 pass.
-9. **09 Bank console**
-   - `/api/ops/state`, the event and incident lists, the AI case brief with
-     template fallback, the review and resolve routes, the audit log.
-   - Done when Act 4 passes.
-10. **10 Demo harness and deploy**
-    - `/demo` split view and control panel.
-    - Vercel production deploy with env vars, `syd1` region.
-11. **11 Rehearsal and polish**
-    - Run every evaluation case and fix failures.
-    - Copy pass, motion pass, empty and error states.
-    - Run once with the LLM offline.
-12. **12 Stretch (only if 11 is done)**
-    - Scam message checker, then the scam-coaching detector.
+Each unit gets a spec in `context/feature_specs/NN-name.md`, written just
+before it's built. What each unit contains and when it counts as done is in
+`context/feature_specs/00-build-plan.md`. Tick a unit here when it's done.
+
+**Phase A — Foundation**
+
+- [x] 01 App shell and design tokens
+- [ ] 02 Database schema and seed — spec drafted
+- [ ] 03 Server foundations and state API
+- [ ] 04 Live balances on Home (step 1)
+- [ ] 05 Trust engine (pure)
+- [ ] 06 Prepare transfer service
+- [ ] 07 Approve and cancel routes
+- [ ] 08 Trust Receipt and PIN dialog
+
+**Phase B — The assistant**
+
+- [ ] 09 DeepSeek client and agent loop
+- [ ] 10 Offline fallback parser
+- [ ] 11 Chat UI (Act 1 done)
+- [ ] 12 First Vercel deploy
+- [ ] 13 Mock merchant page
+- [ ] 14 Product reading and shield card (step 6)
+- [ ] 15 Purchase flow (steps 5–7)
+- [ ] 16 Simulated compromised agent
+- [ ] 17 Fraud rules (pure)
+- [ ] 18 Card authorisation pipeline
+
+**Phase C — Protection and the bank side**
+
+- [ ] 19 "Was this you?" alert (steps 10–12)
+- [ ] 20 Emergency protection (steps 12–13, 16)
+- [ ] 21 Safety knowledge base (step 14)
+- [ ] 22 Protect tab (step 15)
+- [ ] 23 Bank console lists (steps 8, 11)
+- [ ] 24 AI case brief (step 17)
+- [ ] 25 Staff review and resolve (Act 4 done)
+- [ ] 26 Demo harness (step 19)
+
+**Phase D — Rehearsal**
+
+- [ ] 27 Rehearsal and polish (feature freeze 12:00pm Tue 17 Nov)
+
+**Stretch (only if 27 is done)**
+
+- [ ] 28 Scam message checker
+- [ ] 29 Scam-coaching detector
 
 ## Completed
 
 - Product scope finalised. Context files created: `project-overview.md`,
   `architecture.md`, `ui-context.md`, `code-standards.md`,
   `ai-workflow-rules.md`, `progress-tracker.md`.
+- Build plan written: `context/feature_specs/00-build-plan.md` breaks the
+  project into 29 units with dependencies and "done when" criteria.
+- **Unit 01 App shell and design tokens** (Sat 14 Nov): tokens and fonts,
+  `components/ui` primitives, the customer phone frame with Home and Protect,
+  and `/ops`, `/demo` and `/shop/aurora-anc` skeletons with static data.
+  `lib/money.ts`. See `feature_specs/01-app-shell.md` → Built.
 
 ## In Progress
 
@@ -92,10 +95,9 @@ Update this file after every meaningful implementation change.
 
 ## Next Up
 
-- Developer reviews the context files.
-- Write `context/specs/00-build-plan.md` (expanding the build order above
-  with dependencies and per-unit "done").
-- Write `context/specs/01-app-shell.md` and start Unit 01.
+- Developer answers the questions in `02-database.md`. The Supabase project
+  (Sydney region) must exist first.
+- Build and verify Unit 02, tick it above, then write `03-server-foundations.md`.
 
 ## Open Questions
 
@@ -119,6 +121,16 @@ Update this file after every meaningful implementation change.
 ## Architecture Decisions
 
 All decided Sat 14 Nov 2026:
+
+- **Specs live in `context/feature_specs/`, one per unit, written just before
+  the unit is built.** The original 12 units were split into 29 smaller ones,
+  following the split rules in `ai-workflow-rules.md`. Status is tracked only
+  in this file.
+- **Unknown `/shop/[productId]` returns the not-found page with HTTP 200.**
+  `dynamicParams = false` conflicts with `cacheComponents`. Accepted, since
+  it's off the golden path.
+- **lucide-react v1 icon names** (`CircleCheck`, `TriangleAlert`, `OctagonX`,
+  `House`) replace the older aliases in `ui-context.md`.
 
 - **One connected story instead of three separate demos.** Every feature
   appears once and the link between the AI and the trust layer is shown, not
@@ -157,8 +169,8 @@ All decided Sat 14 Nov 2026:
 ## Session Notes
 
 - The repo is a fresh `create-next-app` (Next 16.4.6, React 19.3, Tailwind
-  4.3). Work is happening in the worktree branch
-  `claude/trustpath-financial-assistant-fb2141`.
+  4.3). Each unit is built on its own branch `unit/NN-name` and
+  merged into `main` with `--no-ff` once verified.
 - The submission email needs:
   - university
   - team name

@@ -2,10 +2,12 @@
 
 ## Approach
 
-- Build TrustPath incrementally, against specs.
+- Build TrustPath incrementally, against specs. The full unit list and the per-unit loop
+  (spec → clarify → build → verify → record → next) are in
+  `context/feature_specs/00-build-plan.md`.
 - The context files define what to build, how it fits together and where
   the project stands.
-- Each unit of work has a spec in `context/specs/NN-name.md`. Implement
+- Each unit of work has a spec in `context/feature_specs/NN-name.md`. Implement
   exactly what the spec says, no more and no less.
 - **The golden path in `project-overview.md` is the acceptance test.** A
   feature that isn't on the golden path or the evaluation list doesn't get
@@ -109,7 +111,9 @@ A unit is done only when all of these are true:
 ## Demo-Day Discipline
 
 - After each completed unit:
-  1. Commit to the feature branch.
+  1. Commit to the unit branch `unit/NN-name`, push it, merge it into
+     `main` with `--no-ff` and push `main` (see `00-build-plan.md` → The
+     Loop).
   2. Push.
   3. Confirm that the Vercel preview works once deployment exists.
 - Keep the "Reset demo" path working at all times. A broken reset blocks
