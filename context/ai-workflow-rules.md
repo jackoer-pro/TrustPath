@@ -2,10 +2,12 @@
 
 ## Approach
 
-- Build TrustPath incrementally, against specs.
+- Build TrustPath incrementally, against specs. The full unit list and the per-unit loop
+  (spec → clarify → build → verify → record → next) are in
+  `context/feature_specs/00-build-plan.md`.
 - The context files define what to build, how it fits together and where
   the project stands.
-- Each unit of work has a spec in `context/specs/NN-name.md`. Implement
+- Each unit of work has a spec in `context/feature_specs/NN-name.md`. Implement
   exactly what the spec says, no more and no less.
 - **The golden path in `project-overview.md` is the acceptance test.** A
   feature that isn't on the golden path or the evaluation list doesn't get

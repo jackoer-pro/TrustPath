@@ -95,7 +95,7 @@ money, and only bank staff routes can lift restrictions.
 - `components/ops/` — CardEventList, IncidentList, IncidentDetail, AuditLog.
 - `supabase/migrations/` — SQL schema, constraints, RLS, `complete_action()`
   and `reset_demo()`. Apply it in the Supabase SQL editor.
-- `context/` — These context files and `specs/`.
+- `context/` — These context files and `feature_specs/`.
 
 ## Storage Model
 

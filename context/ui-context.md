@@ -271,11 +271,12 @@ Lucide React, stroke icons only. Sizes are `h-4 w-4` inline in text and
 | Purchase           | `ShoppingBag`   |
 | Card               | `CreditCard`    |
 | Locked / unlocked  | `Lock` / `LockOpen` |
-| Low / success      | `CheckCircle2`  |
-| Medium / high      | `AlertTriangle` |
-| Critical / blocked | `XOctagon`      |
+| Low / success      | `CircleCheck`  |
+| Medium / high      | `TriangleAlert` |
+| Critical / blocked | `OctagonX`      |
 | Assistant          | `Bot`           |
 | Notification       | `Bell`          |
+| Home tab           | `House`         |
 | Live events        | `Activity`      |
 | Audit              | `ScrollText`    |
 
