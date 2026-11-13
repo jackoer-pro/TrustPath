@@ -4,13 +4,13 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
-- Phase A (Foundation). Unit 01 done. Unit 02 spec drafted, awaiting
+- Phase A (Foundation). Units 01–02 done. Unit 03 spec drafted, awaiting
   clarification.
 
 ## Current Goal
 
 - Answer the "Clarify before building" questions in
-  `context/feature_specs/02-database.md`, then build Unit 02.
+  `context/feature_specs/03-server-foundations.md`, then build Unit 03.
 
 ## Schedule
 
@@ -36,8 +36,8 @@ before it's built. What each unit contains and when it counts as done is in
 **Phase A — Foundation**
 
 - [x] 01 App shell and design tokens
-- [ ] 02 Database schema and seed — spec drafted
-- [ ] 03 Server foundations and state API
+- [x] 02 Database schema and seed
+- [ ] 03 Server foundations and state API — spec drafted
 - [ ] 04 Live balances on Home (step 1)
 - [ ] 05 Trust engine (pure)
 - [ ] 06 Prepare transfer service
@@ -88,6 +88,11 @@ before it's built. What each unit contains and when it counts as done is in
   `components/ui` primitives, the customer phone frame with Home and Protect,
   and `/ops`, `/demo` and `/shop/aurora-anc` skeletons with static data.
   `lib/money.ts`. See `feature_specs/01-app-shell.md` → Built.
+- **Unit 02 Database schema and seed** (Sat 14 Nov):
+  `supabase/migrations/0001_init.sql` with every table, the CHECKs, RLS,
+  `complete_action()` and `reset_demo()`. Verified on Postgres (PGlite);
+  still needs applying in Supabase. See `feature_specs/02-database.md` →
+  Built.
 
 ## In Progress
 
@@ -95,9 +100,9 @@ before it's built. What each unit contains and when it counts as done is in
 
 ## Next Up
 
-- Developer answers the questions in `02-database.md`. The Supabase project
-  (Sydney region) must exist first.
-- Build and verify Unit 02, tick it above, then write `03-server-foundations.md`.
+- Developer applies `supabase/migrations/0001_init.sql` in the Supabase SQL
+  editor and answers the questions in `03-server-foundations.md`.
+- Build and verify Unit 03, tick it above, then write `04-live-balances.md`.
 
 ## Open Questions
 
@@ -129,6 +134,10 @@ All decided Sat 14 Nov 2026:
 - **Unknown `/shop/[productId]` returns the not-found page with HTTP 200.**
   `dynamicParams = false` conflicts with `cacheComponents`. Accepted, since
   it's off the golden path.
+- **`pending_actions.recipient_label`** holds the raw recipient of a
+  blocked, unresolved transfer ("J. Smith"), so the blocked receipt can name
+  it. The DB allows it only on `blocked` rows.
+- **No multi-user sign-in.** Asked during Unit 02 and kept out of scope.
 - **lucide-react v1 icon names** (`CircleCheck`, `TriangleAlert`, `OctagonX`,
   `House`) replace the older aliases in `ui-context.md`.
 
