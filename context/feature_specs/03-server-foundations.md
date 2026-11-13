@@ -1,6 +1,6 @@
 # 03 — Server foundations and state API
 
-Status: draft
+Status: approved — built, awaiting live verification
 
 ## Goal
 
@@ -77,19 +77,15 @@ on screen.
 
 ## Clarify before building
 
-1. **Migration applied?** Paste `supabase/migrations/0001_init.sql` into the
-   Supabase SQL editor and run it. It should end with an empty
-   `reset_demo` result and no error. Tell me if anything fails; the file can
-   still be fixed in place until it's applied.
-2. **Keys.** Put `SUPABASE_URL` and `SUPABASE_SECRET_KEY` (Project Settings →
-   API keys → secret key, `sb_secret_…`) in `.env.local` yourself. I'll never
-   print or commit them. OK?
-3. **`DEMO_ADMIN_KEY`.** Proposed: I generate a random 32-character value
-   into `.env.local` for you, and you copy it to Vercel in Unit 12. OK, or do
-   you want to pick it?
-4. **Account numbers in the state API.** Proposed: send only the last 4
-   digits plus the BSB, never the full number, so the UI and AI can't leak
-   it. OK?
+Answered by the developer, Sat 14 Nov:
+
+1. **Migration:** applied in Supabase and ran cleanly.
+2. **Keys:** I created `.env.local` from `.env.example`. `SUPABASE_URL`,
+   `SUPABASE_SECRET_KEY` and `DEEPSEEK_API_KEY` are left blank for the
+   developer to fill in.
+3. **`DEMO_ADMIN_KEY`:** generated (24 random bytes, base64url) into
+   `.env.local`.
+4. **Account numbers:** only the BSB and last 4 digits leave the server.
 
 ## Verify when done
 
@@ -97,14 +93,14 @@ on screen.
       150000 and Goal Saver 420000 cents, card `4821` active, empty
       actions, notifications and incidents.
 - [ ] `curl -X POST localhost:3000/api/demo/reset` without the header → 401
-      `DEMO_KEY_REQUIRED`. With the wrong key → 401. With the right key →
+      `DEMO_KEY_REQUIRED` ✓. With the wrong key → 401 ✓. With the right key →
       `ok: true`, and one `demo.reset` audit row exists.
 - [ ] Reset takes under 3 seconds.
-- [ ] With `SUPABASE_SECRET_KEY` removed → `500 INTERNAL` with a generic
+- [x] With the Supabase keys missing → `500 INTERNAL` with a generic
       message; the server log names the missing variable.
-- [ ] `grep -rn "NEXT_PUBLIC_" .` (excluding `node_modules`/`.next`) finds
+- [x] `grep -rn "NEXT_PUBLIC_" .` (excluding `node_modules`/`.next`) finds
       nothing. `.env.local` isn't tracked and `.env.example` is.
-- [ ] `npm run build` and `npm run lint` pass.
+- [x] `npm run build` and `npm run lint` pass.
 
 ## Built (filled in after completion)
 
