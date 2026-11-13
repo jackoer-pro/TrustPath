@@ -133,7 +133,9 @@ Notes:
   of scope. This keeps invariant 2 intact.
 - **The demo customer** is the single row in `profiles`. Its id is the constant
   `DEMO_PROFILE_ID` in `lib/banking/constants.ts`, and the same literal UUID is
-  used in the seed.
+  used in the seed. All seed ids are fixed literals of the form
+  `00000000-0000-4000-8000-0000000000NN`: profile `01`, Everyday `11`,
+  Goal Saver `12`, card `21`, Linh Nguyen `31`, BrightSpark Energy `32`.
 
 ### Customer actions (`pending_actions`) and state machine
 
@@ -142,6 +144,9 @@ Fields:
 - `id`, `profile_id`, `type ('transfer'|'purchase')`
 - `from_account_id`
 - `to_account_id null`, `payee_id null`, `merchant null`, `product_id null`
+- `recipient_label null`: the raw recipient text of a transfer that didn't
+  resolve. Allowed only when both ids are null and the status is `blocked`
+  (DB CHECK `pending_actions_target`)
 - `amount_cents`, `description`
 - `payload_hash`, `status`, `risk_level`, `reasons jsonb`
 - `origin ('customer'|'simulated_compromised_agent')`

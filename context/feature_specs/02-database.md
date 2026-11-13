@@ -1,6 +1,6 @@
 # 02 — Database schema and seed
 
-Status: draft
+Status: done
 
 ## Goal
 
@@ -98,35 +98,54 @@ seeded.
 
 ## Clarify before building
 
-1. **Supabase project.** Does the project exist yet, in the Sydney region? If
-   not, create it first. Proposed: you create it, I give you the SQL to
-   paste.
-2. **Fixed UUIDs.** Proposed: readable literal UUIDs such as
-   `00000000-0000-4000-8000-000000000001` for the profile. Unit 03 puts the
-   same value in `DEMO_PROFILE_ID`. OK?
-3. **Recent transactions seed.** Proposed: the salary credit plus 4 older
-   rows (rent share, groceries, phone bill, a transfer from savings) so
-   "show my recent transactions" reads naturally. Or salary only?
-4. **Transactions for payments to Mum and billers.** Proposed: only the
-   source-account debit is recorded (the money leaves the bank). OK?
+Answered by the developer, Sat 14 Nov:
+
+1. **Supabase project:** exists. The developer pastes the SQL into the SQL
+   editor.
+2. **Fixed UUIDs:** yes, `00000000-0000-4000-8000-0000000000NN`.
+3. **Recent transactions seed:** the salary plus 4 older rows.
+4. **Payments to people and billers:** record only the source-account debit.
+5. **Multi-user sign-in** (asked during clarification): no. It stays out of
+   scope (see `project-overview.md` → Out of Scope). Transfers to the saved
+   payee Linh Nguyen show money moving, and the pitch names passkeys and real
+   accounts as the production path.
 
 ## Verify when done
 
-- [ ] The migration runs cleanly in the SQL editor on an empty project.
-- [ ] After `select reset_demo();`: 1 profile, 2 accounts ($1,500.00 and
+- [ ] The migration runs cleanly in the Supabase SQL editor on an empty project
+      (developer's step; first item in Unit 03's clarify list).
+- [x] After `select reset_demo();`: 1 profile, 2 accounts ($1,500.00 and
       $4,200.00), 1 active card, 2 payees, 15 approved card events, 0
       actions/incidents/notifications/audit rows.
-- [ ] By hand in SQL: insert a `pending_approval` transfer of $300 Everyday →
+- [x] By hand in SQL: insert a `pending_approval` transfer of $300 Everyday →
       Goal Saver, call `complete_action` with the right hash → balances become
       $1,200.00 and $4,500.00, and two transaction rows exist.
-- [ ] Calling it again with the same id → `ACTION_NOT_APPROVABLE`.
-- [ ] A wrong hash, or an `expires_at` in the past → `ACTION_NOT_APPROVABLE`.
-- [ ] An action larger than the balance → the CHECK raises and nothing
+- [x] Calling it again with the same id → `ACTION_NOT_APPROVABLE`.
+- [x] A wrong hash, or an `expires_at` in the past → `ACTION_NOT_APPROVABLE`.
+- [x] An action larger than the balance → the CHECK raises and nothing
       changes (status still `pending_approval`).
-- [ ] With the anon key, `select` on any table returns nothing, and
+- [x] With the anon key, `select` on any table returns nothing, and
       `rpc('reset_demo')` is denied.
-- [ ] `reset_demo()` brings everything back to the seed state.
+- [x] `reset_demo()` brings everything back to the seed state.
 
 ## Built (filled in after completion)
 
--
+Sat 14 Nov.
+
+- `supabase/migrations/0001_init.sql`: 10 tables, CHECKs, RLS with no policies,
+  `complete_action()`, `reset_demo()` (security definer), execute revoked from
+  `public`, `anon` and `authenticated` and granted to `service_role`. It ends
+  with `select reset_demo();`.
+- **Added column `pending_actions.recipient_label`.** A transfer to an unknown
+  recipient (the hijacked "$500 to J. Smith", or "a new recipient") resolves
+  to no account or payee, but the blocked receipt must still say who it was
+  for. The target CHECK allows a transfer with no account and no payee
+  **only** when `recipient_label` is set and the status is `blocked`.
+- Fixed UUIDs: profile `…001`, Everyday `…011`, Goal Saver `…012`, card
+  `…021`, Linh Nguyen `…031`, BrightSpark Energy `…032`.
+- Mock BSB `999-001`, which isn't a real bank's range. BrightSpark reference
+  `BSE-204918`.
+- Verified against Postgres via PGlite (a WASM build of real Postgres) with
+  Supabase's roles and default grants recreated: all checks above pass,
+  including the purchase path ($951.00 after Act 1 + the headphones). Applying
+  it on the real Supabase project is the developer's step.
