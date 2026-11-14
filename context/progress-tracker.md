@@ -125,11 +125,6 @@ before it's built. What each unit contains and when it counts as done is in
 
 ## Open Questions
 
-- **`next dev` rewrites `AGENTS.md`** with a "Report Next.js feedback" block,
-  because `experimental.agentFeedback: true` is set in `next.config.ts`. The
-  block asks agents to send anonymised feedback to Next.js. Keep it
-  (commit it), or turn the flag off? Until decided, it's reverted after each
-  dev run and no feedback is sent.
 - **Team name and teammate's name.** Needed for the submission email.
 - **Is building before Monday OK?** The handbook has no rule against it but
   says the competition days are for building. Ask the Griffith lead mentor on
@@ -167,6 +162,10 @@ All decided Sat 14 Nov 2026:
   without module-type warnings.
 - **Wrong PINs are counted from audit rows.** The 3rd failure on a pending
   action cancels it; no extra column is needed.
+- **`experimental.agentFeedback` turned off** in `next.config.ts` (developer
+  asked for the optimal choice, Sat 14 Nov). It made `next dev` rewrite
+  `AGENTS.md` on every run and asked agents to send feedback to Next.js;
+  neither helps TrustPath.
 - **No multi-user sign-in.** Asked during Unit 02 and kept out of scope.
 - **lucide-react v1 icon names** (`CircleCheck`, `TriangleAlert`, `OctagonX`,
   `House`) replace the older aliases in `ui-context.md`.
