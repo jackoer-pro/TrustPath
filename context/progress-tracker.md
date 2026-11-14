@@ -7,13 +7,13 @@ Update this file after every meaningful implementation change.
 - Phase A (Foundation) complete: Units 01–08 done. Phase B: Units 09–12 done;
   **Act 1 passes end to end on the public URL.** Units 13–16 done;
   **golden-path steps 1–7 pass online and offline**, and the hijack block is
-  demoable on demand. Unit 17 (fraud rules) done. Unit 18 spec drafted,
-  awaiting clarification.
+  demoable on demand. Units 17–18 done; **golden-path step 10 works
+  through the API.** Unit 19 spec drafted, awaiting clarification.
 
 ## Current Goal
 
 - Answer the "Clarify before building" questions in
-  `context/feature_specs/18-card-authorisation.md`, then build Unit 18.
+  `context/feature_specs/19-was-this-you.md`, then build Unit 19.
 
 ## Schedule
 
@@ -58,11 +58,11 @@ before it's built. What each unit contains and when it counts as done is in
 - [x] 15 Purchase flow (steps 5–7)
 - [x] 16 Simulated compromised agent
 - [x] 17 Fraud rules (pure)
-- [ ] 18 Card authorisation pipeline — spec drafted
+- [x] 18 Card authorisation pipeline
 
 **Phase C — Protection and the bank side**
 
-- [ ] 19 "Was this you?" alert (steps 10–12)
+- [ ] 19 "Was this you?" alert (steps 10–12) — spec drafted
 - [ ] 20 Emergency protection (steps 12–13, 16)
 - [ ] 21 Safety knowledge base (step 14)
 - [ ] 22 Protect tab (step 15)
@@ -155,6 +155,11 @@ before it's built. What each unit contains and when it counts as done is in
 - **Unit 17 Fraud rules** (Sun 15 Nov): pure signals and decision matrix
   with 10 tests. Nova $3,580 → declined + temporarily locked; Metro Café →
   approved. See `feature_specs/17-fraud-rules.md` → Built.
+- **Unit 18 Card authorisation pipeline** (Sun 15 Nov):
+  `POST /api/simulate/card-authorization` → fraud engine → card event, lock,
+  incident, "Was this you?" notification and `fraud_engine` audit rows, with
+  no AI. **Golden-path step 10 works through the API.** See
+  `feature_specs/18-card-authorisation.md` → Built.
 
 ## In Progress
 
@@ -162,10 +167,10 @@ before it's built. What each unit contains and when it counts as done is in
 
 ## Next Up
 
-- Developer answers the questions in `18-card-authorisation.md`.
+- Developer answers the questions in `19-was-this-you.md`.
 - Developer: set Vercel `DEMO_ADMIN_KEY` to the generated production key and
   redeploy (see `12-first-deploy.md` → Built).
-- Build and verify Unit 18, tick it above, then write `19-was-this-you.md`.
+- Build and verify Unit 19, tick it above, then write `20-emergency-protection.md`.
 
 ## Open Questions
 
