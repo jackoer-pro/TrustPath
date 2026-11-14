@@ -77,6 +77,7 @@ Do not modify these unless explicitly instructed:
   block in `AGENTS.md`. Next.js manages it.
 - `package-lock.json` by hand. Change it only through `npm install`.
 - `next.config.ts`, including `cacheComponents` and the turbopack CSS rule.
+  (`experimental.agentFeedback` was removed on the developer's instruction.)
 - `.env*` files with real keys. Never print, log or commit secrets. Only
   `.env.example` is committed.
 
