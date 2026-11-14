@@ -1,6 +1,6 @@
 # 05 — Trust engine (pure)
 
-Status: draft
+Status: done
 
 ## Goal
 
@@ -81,43 +81,55 @@ All files in `lib/trust/`. Use relative imports with the `.ts` extension, no
 
 ## Clarify before building
 
-1. **Word-numbers.** Proposed: support zero to 999,999 ("two hundred", "a
-   hundred and fifty", "one thousand five hundred", hyphenated "twenty-five")
-   plus `2k`. Is that enough, or do you also want "fifty bucks" (yes, cheap
-   to add)?
-2. **R6 large-amount hold.** `architecture.md` exempts own-account
-   transfers. Proposed: own-account transfers skip R6 completely (both the
-   $2,000 and the 50% tests); payee transfers and purchases are checked.
-   OK?
-3. **Scanner granularity.** Proposed: remove the whole sentence containing a
-   match, and show the customer the first 120 characters of what was removed
-   (as the shield card spec says). OK?
-4. **False positives.** Proposed: when in doubt, the scanner errs towards
-   removing. Product copy losing a sentence is harmless; letting an
-   instruction through isn't. OK?
+Answered by the developer, Sat 14 Nov: all four proposals accepted.
+
+1. **Word-numbers:** zero to 999,999 (including "a hundred and fifty",
+   hyphenated tens, and `2k`), plus "bucks" as a dollar word ("fifty bucks"
+   → 50).
+2. **R6:** own-account transfers skip R6 entirely. Payee transfers and
+   purchases are checked against both the $2,000 and the 50% tests.
+3. **Scanner:** remove the whole sentence and show the first 120 characters
+   of what was removed.
+4. **False positives:** when in doubt, remove.
 
 ## Verify when done
 
-- [ ] `npm test` passes, covering:
-  - [ ] Each rule R1–R7 triggers alone with the right decision, risk and
+- [x] `npm test` passes, covering:
+  - [x] Each rule R1–R7 triggers alone with the right decision, risk and
         reason. R1 beats everything. R2 with an unknown recipient reports
         both reasons, but the decision is block.
-  - [ ] Golden path: "$300 into savings" and "$120 electricity" → step_up /
+  - [x] Golden path: "$300 into savings" and "$120 electricity" → step_up /
         low. The hijacked "$500 to J. Smith" with only the headphones message
         → block (R2). "Send $10,000 to a new recipient urgently" → block (R3),
         with R6 also listed.
-  - [ ] Provenance accepts "two hundred" for 20000 cents and "1,500" for
+  - [x] Provenance accepts "two hundred" for 20000 cents and "1,500" for
         150000. It rejects `300` inside `3000` and an amount mentioned 4
         messages ago.
-  - [ ] The scanner removes the exact headphones hidden instruction (in an
+  - [x] The scanner removes the exact headphones hidden instruction (in an
         HTML comment and in a hidden span) and keeps normal product copy.
-  - [ ] The hash is identical for the same fields in any key order and
+  - [x] The hash is identical for the same fields in any key order and
         changes when any field changes.
-  - [ ] `toCents` / `formatAUD` cases.
-- [ ] `lib/trust/*` imports nothing from `next`, `@supabase`, `@/` or
+  - [x] `toCents` / `formatAUD` cases.
+- [x] `lib/trust/*` imports nothing from `next`, `@supabase`, `@/` or
       `lib/db`.
-- [ ] `npm run build` and `npm run lint` pass.
+- [x] `npm run build` and `npm run lint` pass.
 
 ## Built (filled in after completion)
 
--
+Sat 14 Nov.
+
+- `lib/trust/provenance.ts`, `policy.ts`, `content-scanner.ts` and `hash.ts`,
+  plus 5 test files: **30 tests, all passing** (`npm test`).
+- **`assess()` evaluates every rule** so the reasons list is complete; any
+  block wins, then any hold, otherwise step-up. The risk level is the
+  highest among the triggered rules. Reasons are customer-facing sentences.
+  `flags: ['injection_suspected']` comes back on R2 for Unit 06.
+- **R6 is about "this is a large payment, so our team will review it
+  first"**: over $2,000 or over half the source balance, skipped for
+  own-account transfers.
+- **Scanner:** HTML comments are never treated as content (dropped, and
+  reported if instruction-like). Other tags are stripped so visually hidden
+  text is scanned. Initials like "J. Smith" don't split sentences.
+- **`"type": "module"` added to `package.json`.** Without it Node printed a
+  module-type warning for every test file. Build and lint are unaffected.
+- `PROVENANCE_WINDOW = 3` is exported and marked `ponytail:`.
