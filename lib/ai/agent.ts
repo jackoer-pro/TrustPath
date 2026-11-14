@@ -1,13 +1,12 @@
 import "server-only";
 import { audit } from "@/lib/audit";
-import type { PreparedAction } from "@/lib/banking/actions";
 import { chat, DeepSeekError, type LlmMessage } from "./deepseek";
 import { SYSTEM_PROMPT } from "./prompts";
 import { runFallback } from "./fallback";
-import { runTool, TOOL_DEFS } from "./tools";
+import { runTool, TOOL_DEFS, type ChatCard, type ToolContext } from "./tools";
 
 export type ChatMessage = { role: "user" | "assistant"; content: string };
-export type AgentResult = { reply: string; cards: PreparedAction[]; offline: boolean };
+export type AgentResult = { reply: string; cards: ChatCard[]; offline: boolean };
 
 export const MAX_ROUNDS = 4;
 export const HISTORY_LIMIT = 12;
@@ -16,9 +15,9 @@ export const HISTORY_LIMIT = 12;
 export async function runAgent(history: ChatMessage[]): Promise<AgentResult> {
   const recent = history.slice(-HISTORY_LIMIT);
   // ponytail: provenance trusts the client-sent history (the browser is the customer); keep history server-side for real users.
-  const ctx = { userMessages: recent.filter((m) => m.role === "user").map((m) => m.content) };
+  const ctx: ToolContext = { userMessages: recent.filter((m) => m.role === "user").map((m) => m.content) };
   const messages: LlmMessage[] = [{ role: "system", content: SYSTEM_PROMPT }, ...recent];
-  const cards: PreparedAction[] = [];
+  const cards: ChatCard[] = [];
   const toolsUsed: string[] = [];
   let reply = "";
 

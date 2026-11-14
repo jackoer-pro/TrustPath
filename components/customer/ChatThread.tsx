@@ -2,13 +2,13 @@
 
 import { useEffect, useRef, type ReactNode } from "react";
 import { Bot, WifiOff } from "lucide-react";
-import type { PreparedAction } from "@/lib/banking/actions";
+import type { ChatCard } from "@/lib/ai/tools";
 
 export type ChatMsg = {
   id: string;
   role: "user" | "assistant";
   content: string;
-  cards?: PreparedAction[];
+  cards?: ChatCard[];
   offline?: boolean;
   /** Local error bubble — never sent back to the server as history. */
   error?: boolean;
@@ -36,7 +36,7 @@ export function ChatThread({
   messages: ChatMsg[];
   pending: boolean;
   onSuggestion: (text: string) => void;
-  renderCard: (card: PreparedAction) => ReactNode;
+  renderCard: (card: ChatCard) => ReactNode;
 }) {
   const end = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -79,7 +79,7 @@ export function ChatThread({
                 </span>
               )}
             </AssistantBubble>
-            {m.cards?.map((c) => <div key={c.id}>{renderCard(c)}</div>)}
+            {m.cards?.map((c) => <div key={c.type === "receipt" ? c.action.id : c.id}>{renderCard(c)}</div>)}
           </div>
         ),
       )}
