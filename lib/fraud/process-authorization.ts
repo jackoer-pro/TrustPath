@@ -61,7 +61,7 @@ export async function processAuthorization({ cardId, amountCents, merchant, chan
       title: `${decision === "declined" ? "Declined" : "Held"} ${amount} at ${merchant}`,
       description: signals.map((s) => s.reason).join(" "),
       cardEventId: event.id,
-      measures: [`Payment ${decision}`, ...(cardAction === "temporarily_locked" ? ["Card temporarily locked"] : [])],
+      measures: [decision === "declined" ? "Payment declined" : "Payment held for review", ...(cardAction === "temporarily_locked" ? ["Card temporarily locked"] : [])],
     },
     "fraud_engine",
   );

@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState, type FormEvent, type Ref } from "react";
 import { SendHorizontal } from "lucide-react";
 
-export function ChatInput({ disabled, onSend }: { disabled: boolean; onSend: (text: string) => void }) {
+export function ChatInput({ disabled, onSend, inputRef }: { disabled: boolean; onSend: (text: string) => void; inputRef?: Ref<HTMLInputElement> }) {
   const [text, setText] = useState("");
 
   function submit(e: FormEvent) {
@@ -17,6 +17,7 @@ export function ChatInput({ disabled, onSend }: { disabled: boolean; onSend: (te
   return (
     <form onSubmit={submit} className="flex shrink-0 items-center gap-2 border-t border-line bg-surface p-3">
       <input
+        ref={inputRef}
         aria-label="Message TrustPath"
         placeholder="Message TrustPath…"
         maxLength={2000}
