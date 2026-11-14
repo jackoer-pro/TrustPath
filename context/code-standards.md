@@ -50,6 +50,10 @@
     const { id } = await ctx.params
   }
   ```
+- `GET` route handlers that read live data start with
+  `await connection()` (from `next/server`). Otherwise `cacheComponents` may
+  prerender them at build time.
+- Demo and simulate routes: `return checkDemoKey(req) ?? run(service)`.
 - `middleware.ts` is deprecated and renamed `proxy.ts`. We don't need one; do
   not add it.
 - Add `'use client'` only to files that use state, effects or event handlers.

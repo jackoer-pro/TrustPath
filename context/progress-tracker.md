@@ -4,13 +4,13 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
-- Phase A (Foundation). Units 01–02 done. Unit 03 spec drafted, awaiting
+- Phase A (Foundation). Units 01–03 done. Unit 04 spec drafted, awaiting
   clarification.
 
 ## Current Goal
 
 - Answer the "Clarify before building" questions in
-  `context/feature_specs/03-server-foundations.md`, then build Unit 03.
+  `context/feature_specs/04-live-balances.md`, then build Unit 04.
 
 ## Schedule
 
@@ -37,8 +37,8 @@ before it's built. What each unit contains and when it counts as done is in
 
 - [x] 01 App shell and design tokens
 - [x] 02 Database schema and seed
-- [ ] 03 Server foundations and state API — spec drafted
-- [ ] 04 Live balances on Home (step 1)
+- [x] 03 Server foundations and state API
+- [ ] 04 Live balances on Home (step 1) — spec drafted
 - [ ] 05 Trust engine (pure)
 - [ ] 06 Prepare transfer service
 - [ ] 07 Approve and cancel routes
@@ -91,8 +91,13 @@ before it's built. What each unit contains and when it counts as done is in
 - **Unit 02 Database schema and seed** (Sat 14 Nov):
   `supabase/migrations/0001_init.sql` with every table, the CHECKs, RLS,
   `complete_action()` and `reset_demo()`. Verified on Postgres (PGlite);
-  still needs applying in Supabase. See `feature_specs/02-database.md` →
+  applied in Supabase by the developer. See `feature_specs/02-database.md` →
   Built.
+- **Unit 03 Server foundations and state API** (Sat 14 Nov): `lib/db.ts`,
+  `lib/http.ts`, `lib/audit.ts`, the seed-id constants,
+  `GET /api/customer/state`, `POST /api/demo/reset` and `.env.example`.
+  Verified live against Supabase. See `feature_specs/03-server-foundations.md`
+  → Built.
 
 ## In Progress
 
@@ -100,9 +105,8 @@ before it's built. What each unit contains and when it counts as done is in
 
 ## Next Up
 
-- Developer applies `supabase/migrations/0001_init.sql` in the Supabase SQL
-  editor and answers the questions in `03-server-foundations.md`.
-- Build and verify Unit 03, tick it above, then write `04-live-balances.md`.
+- Developer answers the questions in `04-live-balances.md`.
+- Build and verify Unit 04, tick it above, then write `05-trust-engine.md`.
 
 ## Open Questions
 
@@ -137,6 +141,8 @@ All decided Sat 14 Nov 2026:
 - **`pending_actions.recipient_label`** holds the raw recipient of a
   blocked, unresolved transfer ("J. Smith"), so the blocked receipt can name
   it. The DB allows it only on `blocked` rows.
+- **Live-data `GET` routes call `await connection()`** so `cacheComponents`
+  never prerenders them at build time.
 - **No multi-user sign-in.** Asked during Unit 02 and kept out of scope.
 - **lucide-react v1 icon names** (`CircleCheck`, `TriangleAlert`, `OctagonX`,
   `House`) replace the older aliases in `ui-context.md`.
