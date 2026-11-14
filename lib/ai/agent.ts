@@ -41,7 +41,7 @@ export async function runAgent(history: ChatMessage[]): Promise<AgentResult> {
     if (!(e instanceof DeepSeekError)) throw e;
     console.error(e.message);
     // Actions already prepared this turn: keep them, never re-run (no duplicates).
-    if (toolsUsed.includes("prepare_transfer")) {
+    if (toolsUsed.some((t) => t.startsWith("prepare_"))) {
       await audit("ai_agent", "chat.turn", "chat", null, { offline: true, partial: true, tools: toolsUsed, cards: cards.length });
       return { reply: "I've prepared what you asked for below. Please review each one.", cards, offline: true };
     }

@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRightLeft, CircleCheck, OctagonX, ShieldCheck, TriangleAlert, Zap } from "lucide-react";
+import { ArrowRightLeft, CircleCheck, OctagonX, ShieldCheck, ShoppingBag, TriangleAlert, Zap } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Money } from "@/components/ui/Money";
 import { RiskBadge } from "@/components/ui/RiskBadge";
@@ -13,6 +13,7 @@ const time = new Intl.DateTimeFormat("en-AU", { hour: "numeric", minute: "2-digi
 const at = (iso: string) => time.format(new Date(iso));
 
 function whySentence(a: PreparedAction) {
+  if (a.type === "purchase") return `You asked for this, the price comes from ${a.toName}'s catalogue, and your card is active.`;
   const recipient =
     a.recipientKind === "own_account"
       ? `${a.toName} is your own account`
@@ -37,7 +38,8 @@ export function TrustReceipt({
   onApprove: () => void;
   onCancel: () => void;
 }) {
-  const summary = `${formatAUD(a.amountCents)} to ${a.toName}`;
+  const purchase = a.type === "purchase";
+  const summary = `${formatAUD(a.amountCents)} ${purchase ? "at" : "to"} ${a.toName}`;
 
   if (status === "completed")
     return (
@@ -61,7 +63,7 @@ export function TrustReceipt({
 
   const blocked = status === "blocked";
   const isBill = a.recipientKind === "biller";
-  const Icon = isBill ? Zap : ArrowRightLeft;
+  const Icon = purchase ? ShoppingBag : isBill ? Zap : ArrowRightLeft;
 
   return (
     <article
@@ -84,7 +86,7 @@ export function TrustReceipt({
         <div>
           <p className="flex items-center gap-1.5 text-sm text-muted">
             <Icon className="h-4 w-4" aria-hidden />
-            {isBill ? "Bill payment" : "Transfer"}
+            {purchase ? "Purchase" : isBill ? "Bill payment" : "Transfer"}
           </p>
           <Money cents={a.amountCents} className="text-2xl" />
         </div>
@@ -93,19 +95,23 @@ export function TrustReceipt({
           <dt className="text-muted">To</dt>
           <dd>
             {a.toName}
+            {purchase && ` — ${a.productName}`}
             {a.recipientKind === "own_account" && <span className="text-muted"> (your account)</span>}
           </dd>
-          <dt className="text-muted">From</dt>
-          <dd>{a.fromName}</dd>
+          <dt className="text-muted">{purchase ? "Pay with" : "From"}</dt>
+          <dd>{purchase ? `Debit card •••• ${a.cardLastFour} (${a.fromName})` : a.fromName}</dd>
           {!blocked && (
             <>
               <dt className="text-muted">Checks</dt>
               <dd>
                 <ul className="space-y-0.5 text-trust">
                   {a.checks.requestedByYou && <Check>Requested by you</Check>}
-                  {a.checks.recipientKnown && (
-                    <Check>{a.recipientKind === "own_account" ? "Recipient is yours" : "Saved payee"}</Check>
+                  {purchase ? (
+                    <Check>{`Price from ${a.toName}'s catalogue`}</Check>
+                  ) : (
+                    a.checks.recipientKnown && <Check>{a.recipientKind === "own_account" ? "Recipient is yours" : "Saved payee"}</Check>
                   )}
+                  {a.checks.cardActive && <Check>Card active</Check>}
                   {a.checks.fundsAvailable && <Check>Funds available</Check>}
                 </ul>
               </dd>

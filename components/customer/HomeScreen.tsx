@@ -115,7 +115,13 @@ export function HomeScreen() {
       <PinDialog
         actionId={pinFor?.id ?? null}
         payloadHash={pinFor?.payloadHash ?? ""}
-        summary={pinFor ? `${formatAUD(pinFor.amountCents)} to ${pinFor.toName} from ${pinFor.fromName}` : ""}
+        summary={
+          !pinFor
+            ? ""
+            : pinFor.type === "purchase"
+              ? `${formatAUD(pinFor.amountCents)} at ${pinFor.toName} with debit card •••• ${pinFor.cardLastFour}`
+              : `${formatAUD(pinFor.amountCents)} to ${pinFor.toName} from ${pinFor.fromName}`
+        }
         onClose={() => setPinFor(null)}
         onApproved={approved}
         onRefused={refused}

@@ -5,13 +5,14 @@ Update this file after every meaningful implementation change.
 ## Current Phase
 
 - Phase A (Foundation) complete: Units 01–08 done. Phase B: Units 09–12 done;
-  **Act 1 passes end to end on the public URL.** Units 13–14 done
-  (step 6 shield card works). Unit 15 spec drafted, awaiting clarification.
+  **Act 1 passes end to end on the public URL.** Units 13–15 done;
+  **golden-path steps 1–7 pass online and offline.** Unit 16 spec drafted,
+  awaiting clarification.
 
 ## Current Goal
 
 - Answer the "Clarify before building" questions in
-  `context/feature_specs/15-purchase-flow.md`, then build Unit 15.
+  `context/feature_specs/16-compromised-agent.md`, then build Unit 16.
 
 ## Schedule
 
@@ -53,8 +54,8 @@ before it's built. What each unit contains and when it counts as done is in
 - [x] 12 First Vercel deploy
 - [x] 13 Mock merchant page
 - [x] 14 Product reading and shield card (step 6)
-- [ ] 15 Purchase flow (steps 5–7) — spec drafted
-- [ ] 16 Simulated compromised agent
+- [x] 15 Purchase flow (steps 5–7)
+- [ ] 16 Simulated compromised agent — spec drafted
 - [ ] 17 Fraud rules (pure)
 - [ ] 18 Card authorisation pipeline
 
@@ -142,6 +143,10 @@ before it's built. What each unit contains and when it counts as done is in
   (catalogue only, scanned, wrapped as untrusted), `ShieldCard`, and an
   `injection_blocked` incident per turn. **Golden-path step 6 works online
   and offline.** See `feature_specs/14-shield-card.md` → Built.
+- **Unit 15 Purchase flow** (Sun 15 Nov): `preparePurchase` (catalogue price,
+  card check), `prepare_purchase` tool, purchase receipt, offline buy path.
+  **Golden-path steps 1–7 pass in one chat → Everyday $951.00.** See
+  `feature_specs/15-purchase-flow.md` → Built.
 
 ## In Progress
 
@@ -149,10 +154,10 @@ before it's built. What each unit contains and when it counts as done is in
 
 ## Next Up
 
-- Developer answers the questions in `15-purchase-flow.md`.
+- Developer answers the questions in `16-compromised-agent.md`.
 - Developer: set Vercel `DEMO_ADMIN_KEY` to the generated production key and
   redeploy (see `12-first-deploy.md` → Built).
-- Build and verify Unit 15, tick it above, then write `16-compromised-agent.md`.
+- Build and verify Unit 16, tick it above, then write `17-fraud-rules.md`.
 
 ## Open Questions
 

@@ -1,6 +1,6 @@
 # 15 — Purchase flow
 
-Status: draft
+Status: done
 
 ## Goal
 
@@ -63,36 +63,57 @@ always comes from the catalogue, never from the model or the page.
 
 ## Clarify before building
 
-1. **No card event for a chat purchase.** Proposed: the purchase is a
-   PIN-approved TrustPath action, while card events are the simulated
-   payment network used by the fraud engine (Act 3). Keeping them separate
-   keeps the fraud demo clean. OK?
-2. **The catalogue price always wins.** If Alex types a different price
-   ("buy it for $100"), the receipt still says $129.00, and the reply points
-   out the real price. OK?
-3. **Receipt wording** as above ("Price from SoundWave Audio's catalogue",
-   "Debit card •••• 4821"). OK?
-4. **Order of cards:** the shield card first, then the purchase receipt,
-   matching steps 6 → 7. OK?
+Answered by the developer, Sun 15 Nov: all four proposals accepted.
+
+1. No card event for a chat purchase.
+2. The catalogue price always wins.
+3. Receipt wording as specified.
+4. The shield card first, then the purchase receipt.
 
 ## Verify when done
 
 After a reset, online and offline, in the browser at 390px:
 
-- [ ] **Act 1, then step 5** (the headphones message with the link) → a
+- [x] **Act 1, then step 5** (the headphones message with the link) → a
       shield card, then a purchase receipt (low risk, $129.00, SoundWave
       Audio, card •••• 4821).
-- [ ] Approve with the PIN → **Everyday $951.00** and the receipt shows
+- [x] Approve with the PIN → **Everyday $951.00** and the receipt shows
       "Completed". Goal Saver stays $4,500.00.
-- [ ] Still exactly 1 `injection_blocked` incident, and no $500 transfer.
-- [ ] With the card set to `locked` in SQL → the purchase receipt is
+- [x] Still exactly 1 `injection_blocked` incident, and no $500 transfer.
+- [x] With the card set to `locked` in SQL → the purchase receipt is
       **Blocked** ("Your card is locked…") with no buttons.
-- [ ] "Buy it for $100" + link → the receipt is $129.00.
-- [ ] A purchase without the product in Alex's words (via the tool directly
-      in a test) → blocked by R2.
-- [ ] `npm test`, `npm run build` and `npm run lint` pass. Deployed and
+- [x] "Buy it for $100" + link → never a $100 receipt. Online, the model points
+      out "$129.00, not $100" and asks first; after "yes" the receipt is
+      $129.00. Offline, the receipt is $129.00 directly. (See Built.)
+- [x] A purchase without the product in Alex's words → blocked by R2.
+      Covered by the provenance test ("buy me something nice" fails) and the
+      R2 policy test.
+- [x] `npm test`, `npm run build` and `npm run lint` pass. Deployed and
       checked on the public URL.
 
 ## Built (filled in after completion)
 
--
+Sun 15 Nov.
+
+- `preparePurchase()` and a shared `store()` (insert, audit, injection
+  incident) now used by both prepares. `PreparedAction` is an explicit type
+  (adds `merchant` kind, `productName`, `cardLastFour`, `checks.cardActive`).
+  `prepare_purchase` tool, prompt lines, the purchase `TrustReceipt`
+  variant, the PIN summary "… at SoundWave Audio with debit card •••• 4821",
+  and the fallback "buy + link" → `view_product` then `prepare_purchase`.
+- **Golden-path steps 1–7 pass in one chat, online and offline** (headless
+  Chrome, 390px, production build, Supabase): Act 1 → $1,080.00; the
+  headphones link → shield card, then the purchase receipt (low, $129.00,
+  •••• 4821) → PIN → **Everyday $951.00**, Goal Saver $4,500.00; exactly 1
+  injection incident; no live $500 transfer. No console errors.
+- Locked card → the purchase receipt is blocked ("Your card is locked, so
+  purchases can't go through.").
+- **Deviation (accepted as better):** with a wrong price ("for $100") the
+  online model doesn't prepare silently. It says "The headphones are actually
+  $129.00, not $100. Would you like me to prepare the purchase at $129.00?",
+  and "Yes please" then prepares $129.00. The price never comes from the
+  customer or the model either way.
+- Rehearsal note (Unit 27): the online reply after a purchase doesn't mention
+  the hidden instructions; only the shield card does. Consider a prompt line.
+- Fixed an escaping slip during the build (regex `` written as a backspace
+  by a Python edit). The repo was scanned for control characters: none.

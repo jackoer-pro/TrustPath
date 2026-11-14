@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import { AppError } from "@/lib/http";
 import { formatAUD, toCents } from "@/lib/money";
 import { getCustomerState } from "@/lib/banking/state";
-import { prepareTransfer, type PreparedAction } from "@/lib/banking/actions";
+import { preparePurchase, prepareTransfer, type PreparedAction } from "@/lib/banking/actions";
 import { DEMO_PROFILE_ID } from "@/lib/banking/constants";
 import { createIncident } from "@/lib/protect/incidents";
 import type { ToolDef } from "./deepseek";
@@ -26,6 +26,23 @@ type Tool<S extends z.ZodType> = {
   run: (args: z.infer<S>, ctx: ToolContext) => Promise<ToolResult>;
 };
 const tool = <S extends z.ZodType>(t: Tool<S>) => t;
+
+/** Server-side arithmetic so the model never calculates money (Unit 09): balance minus live pending approvals. */
+async function leftAfterPending(fromAccountId: string, fromName: string): Promise<string> {
+  const [{ data: acct, error: aErr }, { data: pending, error: pErr }] = await Promise.all([
+    db().from("accounts").select("balance_cents").eq("id", fromAccountId).single(),
+    db()
+      .from("pending_actions")
+      .select("amount_cents")
+      .eq("from_account_id", fromAccountId)
+      .eq("status", "pending_approval")
+      .gt("expires_at", new Date().toISOString()),
+  ]);
+  if (aErr) throw aErr;
+  if (pErr) throw pErr;
+  const left = Number(acct.balance_cents) - pending.reduce((sum, p) => sum + Number(p.amount_cents), 0);
+  return `${formatAUD(left)} in ${fromName}`;
+}
 
 const normalise = (s: string) => s.trim().toLowerCase().replace(/^my\s+/, "").replace(/\s+account$/, "");
 
@@ -146,20 +163,6 @@ const prepareTransferTool = tool({
 
     const card = await prepareTransfer({ to, amountCents, fromAccount, description, userMessages: ctx.userMessages, origin: "customer" });
 
-    // Server-side arithmetic so the model never calculates money (developer decision, Unit 09).
-    const [{ data: acct, error: aErr }, { data: pending, error: pErr }] = await Promise.all([
-      db().from("accounts").select("balance_cents").eq("id", card.fromAccountId).single(),
-      db()
-        .from("pending_actions")
-        .select("amount_cents")
-        .eq("from_account_id", card.fromAccountId)
-        .eq("status", "pending_approval")
-        .gt("expires_at", new Date().toISOString()),
-    ]);
-    if (aErr) throw aErr;
-    if (pErr) throw pErr;
-    const left = Number(acct.balance_cents) - pending.reduce((sum, p) => sum + Number(p.amount_cents), 0);
-
     return {
       card: { type: "receipt", action: card },
       forModel: {
@@ -169,7 +172,40 @@ const prepareTransferTool = tool({
         from: card.fromName,
         riskLevel: card.riskLevel,
         reasons: card.reasons,
-        fromAccountLeftAfterPending: `${formatAUD(left)} in ${card.fromName}`,
+        fromAccountLeftAfterPending: await leftAfterPending(card.fromAccountId, card.fromName),
+      },
+    };
+  },
+});
+
+const preparePurchaseTool = tool({
+  def: {
+    type: "function",
+    function: {
+      name: "prepare_purchase",
+      description:
+        "Prepare (not pay) a purchase of a shop product with Alex's debit card. The price always comes from the shop catalogue, so never pass one. Call view_product first.",
+      parameters: {
+        type: "object",
+        properties: { productIdOrUrl: { type: "string", description: "The product id or shop URL Alex shared." } },
+        required: ["productIdOrUrl"],
+      },
+    },
+  },
+  args: z.object({ productIdOrUrl: z.string().trim().min(1).max(300) }),
+  async run({ productIdOrUrl }, ctx) {
+    const card = await preparePurchase({ productIdOrUrl, userMessages: ctx.userMessages, origin: "customer" });
+    return {
+      card: { type: "receipt", action: card },
+      forModel: {
+        status: card.status,
+        amount: formatAUD(card.amountCents),
+        merchant: card.toName,
+        product: card.productName,
+        card: `debit card ending ${card.cardLastFour}`,
+        riskLevel: card.riskLevel,
+        reasons: card.reasons,
+        fromAccountLeftAfterPending: await leftAfterPending(card.fromAccountId, card.fromName),
       },
     };
   },
@@ -214,7 +250,7 @@ const viewProduct = tool({
   },
 });
 
-const TOOLS = [getAccounts, getRecentTransactions, getPayees, prepareTransferTool, viewProduct];
+const TOOLS = [getAccounts, getRecentTransactions, getPayees, prepareTransferTool, viewProduct, preparePurchaseTool];
 export const TOOL_DEFS: ToolDef[] = TOOLS.map((t) => t.def);
 
 /** Validate the model's arguments with Zod and run the tool. Bad args and AppErrors go back to the model; they never throw. */
