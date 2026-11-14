@@ -4,13 +4,13 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
-- Phase A (Foundation). Units 01–03 done. Unit 04 spec drafted, awaiting
+- Phase A (Foundation). Units 01–04 done. Unit 05 spec drafted, awaiting
   clarification.
 
 ## Current Goal
 
 - Answer the "Clarify before building" questions in
-  `context/feature_specs/04-live-balances.md`, then build Unit 04.
+  `context/feature_specs/05-trust-engine.md`, then build Unit 05.
 
 ## Schedule
 
@@ -38,8 +38,8 @@ before it's built. What each unit contains and when it counts as done is in
 - [x] 01 App shell and design tokens
 - [x] 02 Database schema and seed
 - [x] 03 Server foundations and state API
-- [ ] 04 Live balances on Home (step 1) — spec drafted
-- [ ] 05 Trust engine (pure)
+- [x] 04 Live balances on Home (step 1)
+- [ ] 05 Trust engine (pure) — spec drafted
 - [ ] 06 Prepare transfer service
 - [ ] 07 Approve and cancel routes
 - [ ] 08 Trust Receipt and PIN dialog
@@ -98,6 +98,9 @@ before it's built. What each unit contains and when it counts as done is in
   `GET /api/customer/state`, `POST /api/demo/reset` and `.env.example`.
   Verified live against Supabase. See `feature_specs/03-server-foundations.md`
   → Built.
+- **Unit 04 Live balances on Home** (Sat 14 Nov): the `useCustomerState`
+  polling hook, `AccountSummary` and `HomeScreen`. **Golden-path step 1
+  works from the DB.** See `feature_specs/04-live-balances.md` → Built.
 
 ## In Progress
 
@@ -105,8 +108,8 @@ before it's built. What each unit contains and when it counts as done is in
 
 ## Next Up
 
-- Developer answers the questions in `04-live-balances.md`.
-- Build and verify Unit 04, tick it above, then write `05-trust-engine.md`.
+- Developer answers the questions in `05-trust-engine.md`.
+- Build and verify Unit 05, tick it above, then write `06-prepare-transfer.md`.
 
 ## Open Questions
 
