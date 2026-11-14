@@ -90,7 +90,7 @@ export function ChatThread({
             Checking
             <span className="flex gap-1" aria-hidden>
               {[0, 150, 300].map((d) => (
-                <span key={d} className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted" style={{ animationDelay: `${d}ms` }} />
+                <span key={d} className="h-1.5 w-1.5 animate-pulse rounded-full bg-muted" style={{ animationDelay: `${d}ms` }} />
               ))}
             </span>
             <span className="sr-only">…</span>
