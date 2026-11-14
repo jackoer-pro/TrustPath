@@ -1,6 +1,6 @@
 # 06 — Prepare transfer service
 
-Status: draft
+Status: done
 
 ## Goal
 
@@ -71,36 +71,48 @@ None on screen yet. This is the engine behind steps 3, 6 (hijack block) and
 
 ## Clarify before building
 
-1. **Amount units.** Proposed: the service takes integer cents; the AI tool
-   layer (Unit 09) converts the model's "$300" with `toCents()`. OK?
-2. **Exact-match resolution only.** Proposed: "Mum", "my savings" and
-   "electricity" resolve; "Mumm" or "Linh N." don't (→ unknown recipient →
-   blocked). It's safer and predictable on camera. OK?
-3. **Same source and destination** → a validation error, not a stored
-   blocked action. OK?
-4. **Temporary dev route** for verification (removed in Unit 11). Services
-   use `server-only`, so a plain Node script can't call them. OK?
+Answered by the developer, Sat 14 Nov: all four proposals accepted.
+
+1. The service takes integer cents; the Unit 09 tool layer converts.
+2. Exact-match resolution only (after normalising "my …" / "… account").
+3. Same source and destination → `AppError('SAME_ACCOUNT')`, nothing stored.
+4. Temporary dev route `POST /api/dev/prepare-transfer` for verification,
+   to be deleted in Unit 11.
 
 ## Verify when done
 
 Through the dev route, after a reset:
 
-- [ ] `to: "savings", 30000, messages ["Move $300 into savings"]` →
+- [x] `to: "savings", 30000, messages ["Move $300 into savings"]` →
       `pending_approval`, low risk, a valid 64-character hash, 2 audit rows.
-- [ ] `to: "electricity", 12000` → `pending_approval`, low, payee
+- [x] `to: "electricity", 12000` → `pending_approval`, low, payee
       BrightSpark Energy.
-- [ ] `to: "J. Smith", 50000, messages ["Buy these headphones for $129 …"]`
+- [x] `to: "J. Smith", 50000, messages ["Buy these headphones for $129 …"]`
       → `blocked`, `recipient_label` "J. Smith", plus one
       `injection_blocked` incident (high, contained, linked).
-- [ ] `to: "a new recipient", 1000000` with a matching message → `blocked`
+- [x] `to: "a new recipient", 1000000` with a matching message → `blocked`
       (R3), with no incident.
-- [ ] `to: "Mum", 80000` with a matching message → `held` (R6, over half
+- [x] `to: "Mum", 80000` with a matching message → `held` (R6, over half
       the balance).
-- [ ] `to: "everyday"` from Everyday → 400 `SAME_ACCOUNT`, nothing stored.
-- [ ] No balance changes in any case.
-- [ ] Without the demo key → 401. `next build` + `next start` → 404.
-- [ ] `npm test`, `npm run build` and `npm run lint` pass.
+- [x] `to: "everyday"` from Everyday → 400 `SAME_ACCOUNT`, nothing stored.
+- [x] No balance changes in any case.
+- [x] Without the demo key → 401; an invalid body → 400. In production the
+      route returns 404 (`NODE_ENV` guard; `next start` runs as production).
+- [x] `npm test`, `npm run build` and `npm run lint` pass.
 
 ## Built (filled in after completion)
 
--
+Sat 14 Nov.
+
+- `lib/banking/actions.ts` → `prepareTransfer()`, `lib/protect/incidents.ts`
+  → `createIncident(fields, actor)`, and the temporary
+  `POST /api/dev/prepare-transfer` route.
+- Verified live against Supabase via `next dev`. All 9 scenarios passed
+  (golden-path Act 1 pair, hijack + incident, the new-recipient block, the
+  R6 hold, the word-number + "my everyday account" case, `SAME_ACCOUNT`,
+  401/400), and no balance changed.
+- Audit actor for `action.prepared` is `ai_agent` for customer-origin actions
+  and `system` for the simulated compromised agent. `trust_engine` writes
+  `action.assessed` and `incident.created`.
+- Returned receipt data adds `recipientKind` (`own_account | person |
+  biller | unknown`) and `checks` for the receipt in Unit 08.
