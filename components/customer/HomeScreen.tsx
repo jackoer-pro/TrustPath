@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { formatAUD } from "@/lib/money";
 import type { PreparedAction } from "@/lib/banking/actions";
+import type { CustomerState } from "@/lib/banking/state";
 import { AccountSummary } from "./AccountSummary";
 import { ChatInput } from "./ChatInput";
 import { ChatThread, type ChatMsg } from "./ChatThread";
@@ -15,6 +16,37 @@ const HISTORY_LIMIT = 12;
 const OFFLINE_ERROR = "I couldn't reach the bank just now. Please try again.";
 
 type Local = { status?: ReceiptStatus; completedAt?: string; note?: string };
+type PolledAction = CustomerState["actions"][number];
+
+/** A blocked hijack attempt from the demo's simulated compromised agent, shown as a labelled assistant message. */
+function simulationMessage(a: PolledAction, fromName: string): ChatMsg {
+  const action: PreparedAction = {
+    id: a.id,
+    type: "transfer",
+    status: "blocked",
+    riskLevel: a.riskLevel,
+    reasons: a.reasons,
+    amountCents: a.amountCents,
+    description: a.description,
+    payloadHash: a.payloadHash,
+    origin: "simulated_compromised_agent",
+    fromAccountId: a.fromAccountId,
+    fromName,
+    toName: a.recipientLabel ?? "an unknown recipient",
+    recipientKind: "unknown",
+    checks: { requestedByYou: false, recipientKnown: false, fundsAvailable: true },
+    createdAt: a.createdAt,
+    expiresAt: a.expiresAt,
+  };
+  return {
+    id: `sim-${a.id}`,
+    role: "assistant",
+    at: a.createdAt,
+    label: "Simulated compromised agent",
+    content: `Something tried to send ${formatAUD(a.amountCents)} to ${action.toName} without you asking. I blocked it.`,
+    cards: [{ type: "receipt", action }],
+  };
+}
 
 export function HomeScreen() {
   const { state, error, setBalances } = useCustomerState();
@@ -26,7 +58,7 @@ export function HomeScreen() {
   const patch = (id: string, l: Local) => setLocal((prev) => ({ ...prev, [id]: { ...prev[id], ...l } }));
 
   async function send(text: string) {
-    const userMsg: ChatMsg = { id: crypto.randomUUID(), role: "user", content: text };
+    const userMsg: ChatMsg = { id: crypto.randomUUID(), role: "user", content: text, at: new Date().toISOString() };
     const history = [...messages, userMsg]
       .filter((m) => !m.error)
       .slice(-HISTORY_LIMIT)
@@ -41,15 +73,21 @@ export function HomeScreen() {
       });
       const body = await res.json();
       const reply: ChatMsg = body.ok
-        ? { id: crypto.randomUUID(), role: "assistant", content: body.data.reply, cards: body.data.cards, offline: body.data.offline }
-        : { id: crypto.randomUUID(), role: "assistant", content: OFFLINE_ERROR, error: true };
+        ? { id: crypto.randomUUID(), role: "assistant", content: body.data.reply, cards: body.data.cards, offline: body.data.offline, at: new Date().toISOString() }
+        : { id: crypto.randomUUID(), role: "assistant", content: OFFLINE_ERROR, error: true, at: new Date().toISOString() };
       setMessages((m) => [...m, reply]);
     } catch {
-      setMessages((m) => [...m, { id: crypto.randomUUID(), role: "assistant", content: OFFLINE_ERROR, error: true }]);
+      setMessages((m) => [...m, { id: crypto.randomUUID(), role: "assistant", content: OFFLINE_ERROR, error: true, at: new Date().toISOString() }]);
     } finally {
       setPending(false);
     }
   }
+
+  // Derived from the 2 s poll (no effect needed); never sent to the model as history.
+  const simulated = (state?.actions ?? [])
+    .filter((a) => a.origin === "simulated_compromised_agent")
+    .map((a) => simulationMessage(a, state?.accounts.find((x) => x.id === a.fromAccountId)?.name ?? "Everyday"));
+  const thread = [...messages, ...simulated].sort((x, y) => x.at.localeCompare(y.at));
 
   /** Local outcome first (instant), then the polled DB status (expiry, cancellation), then the prepared status. */
   const statusOf = (a: PreparedAction) => {
@@ -92,7 +130,7 @@ export function HomeScreen() {
 
       <section aria-label="Chat with TrustPath" className="flex min-h-0 flex-1 flex-col bg-sunken">
         <ChatThread
-          messages={messages}
+          messages={thread}
           pending={pending}
           onSuggestion={send}
           renderCard={(c) =>

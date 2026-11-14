@@ -1,6 +1,6 @@
 # 16 — Simulated compromised agent
 
-Status: draft
+Status: done
 
 ## Goal
 
@@ -46,33 +46,45 @@ reliable on camera regardless of how the real model behaves.
 
 ## Clarify before building
 
-1. **No customer words** (`userMessages: []`), so R2 always fails. Proposed:
-   yes. That's exactly the "agent acting on its own" case.
-2. **Show it in the customer's chat** (proposed) or only in the bank
-   console? Showing a red Blocked card on the phone while the incident lands
-   in the console is the most visual for the split-screen video. OK?
-3. **Label:** the Blocked card carries "Simulated compromised agent" so it's
-   clearly a simulation (invariant 11). OK?
-4. **Each click is a new attempt:** a new blocked action plus a new incident,
-   with no deduplication. Reset clears them. OK?
+Answered by the developer, Sun 15 Nov: all four proposals accepted.
+
+1. No customer words (`userMessages: []`).
+2. The attempt shows in the customer's chat as well as in the console.
+3. It's labelled "Simulated compromised agent".
+4. Every click is a new attempt and incident; reset clears them.
 
 ## Verify when done
 
 After a reset:
 
-- [ ] `POST /api/demo/compromised-agent` without the key → 401; with it → 200
+- [x] `POST /api/demo/compromised-agent` without the key → 401; with it → 200
       with `status: 'blocked'`. The reasons include "This instruction didn't
       come from you." and "New payees can't be added by the assistant."
-- [ ] One `injection_blocked` incident (severity **high**, contained),
+- [x] One `injection_blocked` incident (severity **high**, contained),
       linked to the action by `action_id`, plus audit rows (`system /
       action.prepared`, `trust_engine / action.assessed`, `trust_engine /
       incident.created`).
-- [ ] No balance changes, and nothing is approvable.
-- [ ] The customer app shows the red Blocked card with the simulation label
+- [x] No balance changes, and nothing is approvable.
+- [x] The customer app shows the red Blocked card with the simulation label
       within about 2 s, with no reload.
-- [ ] `npm test`, `npm run build` and `npm run lint` pass. Deployed and
+- [x] `npm test`, `npm run build` and `npm run lint` pass. Deployed and
       checked on the public URL.
 
 ## Built (filled in after completion)
 
--
+Sun 15 Nov.
+
+- `lib/demo/compromised-agent.ts` and `POST /api/demo/compromised-agent`
+  (demo key). They go through the normal `prepareTransfer()`, so the block is
+  the real trust engine, not a special case.
+- **Customer app:** simulated attempts are **derived from the 2 s state poll**
+  (no extra effect or state) and merged into the thread by timestamp.
+  `ChatMsg` gained `at` and an optional `label`. The red pill reads
+  "Simulated compromised agent". These messages are never sent to the model
+  as history.
+- Verified live (production build, Supabase): 401 without the key; 200 →
+  `blocked` with both R2 and R3 reasons; 1 **high** `injection_blocked`
+  incident linked by `action_id`; audit rows for `system` and
+  `trust_engine`; approving it → 409; balances unchanged. In the browser the
+  card appeared on an open app in **about 1 s** with no reload, chat
+  continues normally, reset clears it, and there were no console errors.

@@ -5,14 +5,14 @@ Update this file after every meaningful implementation change.
 ## Current Phase
 
 - Phase A (Foundation) complete: Units 01–08 done. Phase B: Units 09–12 done;
-  **Act 1 passes end to end on the public URL.** Units 13–15 done;
-  **golden-path steps 1–7 pass online and offline.** Unit 16 spec drafted,
-  awaiting clarification.
+  **Act 1 passes end to end on the public URL.** Units 13–16 done;
+  **golden-path steps 1–7 pass online and offline**, and the hijack block is
+  demoable on demand. Unit 17 spec drafted, awaiting clarification.
 
 ## Current Goal
 
 - Answer the "Clarify before building" questions in
-  `context/feature_specs/16-compromised-agent.md`, then build Unit 16.
+  `context/feature_specs/17-fraud-rules.md`, then build Unit 17.
 
 ## Schedule
 
@@ -55,8 +55,8 @@ before it's built. What each unit contains and when it counts as done is in
 - [x] 13 Mock merchant page
 - [x] 14 Product reading and shield card (step 6)
 - [x] 15 Purchase flow (steps 5–7)
-- [ ] 16 Simulated compromised agent — spec drafted
-- [ ] 17 Fraud rules (pure)
+- [x] 16 Simulated compromised agent
+- [ ] 17 Fraud rules (pure) — spec drafted
 - [ ] 18 Card authorisation pipeline
 
 **Phase C — Protection and the bank side**
@@ -147,6 +147,10 @@ before it's built. What each unit contains and when it counts as done is in
   card check), `prepare_purchase` tool, purchase receipt, offline buy path.
   **Golden-path steps 1–7 pass in one chat → Everyday $951.00.** See
   `feature_specs/15-purchase-flow.md` → Built.
+- **Unit 16 Simulated compromised agent** (Sun 15 Nov): a demo route sends the
+  hijacked $500 call through the real trust engine (always blocked, high
+  incident), shown in the customer chat as a labelled Blocked card. See
+  `feature_specs/16-compromised-agent.md` → Built.
 
 ## In Progress
 
@@ -154,10 +158,10 @@ before it's built. What each unit contains and when it counts as done is in
 
 ## Next Up
 
-- Developer answers the questions in `16-compromised-agent.md`.
+- Developer answers the questions in `17-fraud-rules.md`.
 - Developer: set Vercel `DEMO_ADMIN_KEY` to the generated production key and
   redeploy (see `12-first-deploy.md` → Built).
-- Build and verify Unit 16, tick it above, then write `17-fraud-rules.md`.
+- Build and verify Unit 17, tick it above, then write `18-card-authorisation.md`.
 
 ## Open Questions
 
