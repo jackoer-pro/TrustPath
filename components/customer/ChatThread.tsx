@@ -1,13 +1,17 @@
 "use client";
 
 import { useEffect, useRef, type ReactNode } from "react";
-import { Bot, WifiOff } from "lucide-react";
+import { Bot, FlaskConical, WifiOff } from "lucide-react";
 import type { ChatCard } from "@/lib/ai/tools";
 
 export type ChatMsg = {
   id: string;
   role: "user" | "assistant";
   content: string;
+  /** ISO time, used to merge polled simulation messages into the thread in order. */
+  at: string;
+  /** e.g. "Simulated compromised agent" (invariant 11). */
+  label?: string;
   cards?: ChatCard[];
   offline?: boolean;
   /** Local error bubble — never sent back to the server as history. */
@@ -72,6 +76,12 @@ export function ChatThread({
           <div key={m.id} className="animate-rise space-y-3">
             <AssistantBubble>
               <p className={m.error ? "text-risk-critical" : ""}>{m.content}</p>
+              {m.label && (
+                <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-risk-critical-bg px-2 py-0.5 text-xs text-risk-critical">
+                  <FlaskConical className="h-3 w-3" aria-hidden />
+                  {m.label}
+                </span>
+              )}
               {m.offline && (
                 <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-sunken px-2 py-0.5 text-xs text-muted">
                   <WifiOff className="h-3 w-3" aria-hidden />
