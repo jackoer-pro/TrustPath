@@ -9,7 +9,7 @@
 | Icons          | `lucide-react`                                       | All icons                                                                |
 | Database       | Supabase Postgres via `@supabase/supabase-js`        | Accounts, payees, cards, actions, card events, incidents, audit log      |
 | Validation     | `zod`                                                | API request bodies, LLM tool arguments, LLM JSON outputs                 |
-| LLM            | DeepSeek API (`deepseek-flash`), OpenAI-compatible   | Intent understanding, tool calling, replies, case briefs                 |
+| LLM            | DeepSeek API (`deepseek-v4-pro`), OpenAI-compatible  | Intent understanding, tool calling, replies, case briefs                 |
 | Tests          | Node built-in test runner (`node --test`, Node 26)   | Pure trust, provenance, scanner and fraud-rule logic                     |
 | Hosting        | Vercel (function region `syd1`)                      | Public demo URL                                                          |
 | DB hosting     | Supabase project in `ap-southeast-2` (Sydney)        | Low latency to Vercel `syd1`                                             |
@@ -212,8 +212,15 @@ The event is stored once, after assessment, with `decision` and
 - **Provider:** DeepSeek, OpenAI-compatible endpoint
   `https://api.deepseek.com/chat/completions` with header
   `Authorization: Bearer ${DEEPSEEK_API_KEY}`.
-  - Model: `DEEPSEEK_MODEL` env var, default `deepseek-flash`.
-  - Thinking off: `"thinking": {"type": "disabled"}`.
+  - Model: `DEEPSEEK_MODEL` env var, default `deepseek-v4-pro`. The key
+    can use `deepseek-flash` and `deepseek-v4-pro`. Both passed the Unit 09
+    cases 7/7. `v4-pro` was chosen for shorter, on-script replies and a
+    faster payday reply (about 3.7 s vs 4.9 s). `deepseek-flash` is a
+    drop-in fallback via the env var.
+  - Thinking off: `"thinking": {"type": "disabled"}`. **It must be sent
+    explicitly:** when it's omitted, DeepSeek enables thinking by default
+    (verified 14 Nov).
+  - `temperature: 0` for repeatable takes.
   - Timeout: 20 s.
   - The legacy `deepseek-chat` is discontinued; don't use it.
 - **Agent loop** (`lib/ai/agent.ts`):
@@ -400,7 +407,7 @@ The response shape is always `{ ok: true, data }` or
 | Name                  | Where        | Notes                                              |
 | --------------------- | ------------ | -------------------------------------------------- |
 | `DEEPSEEK_API_KEY`    | server only  | Missing → fallback parser                          |
-| `DEEPSEEK_MODEL`      | server only  | Default `deepseek-flash`                           |
+| `DEEPSEEK_MODEL`      | server only  | Default `deepseek-v4-pro`                          |
 | `SUPABASE_URL`        | server only  | Project URL                                        |
 | `SUPABASE_SECRET_KEY` | server only  | `sb_secret_…` (or the legacy service_role key)     |
 | `DEMO_PIN`            | server only  | Default `1234`                                     |

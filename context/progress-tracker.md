@@ -4,13 +4,13 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
-- Phase A (Foundation) complete: Units 01–08 done. Phase B starts with the
-  Unit 09 spec, awaiting clarification.
+- Phase A (Foundation) complete: Units 01–08 done. Phase B: Unit 09 done.
+  Unit 10 spec drafted, awaiting clarification.
 
 ## Current Goal
 
 - Answer the "Clarify before building" questions in
-  `context/feature_specs/09-agent-loop.md`, then build Unit 09.
+  `context/feature_specs/10-fallback-parser.md`, then build Unit 10.
 
 ## Schedule
 
@@ -46,8 +46,8 @@ before it's built. What each unit contains and when it counts as done is in
 
 **Phase B — The assistant**
 
-- [ ] 09 DeepSeek client and agent loop — spec drafted
-- [ ] 10 Offline fallback parser
+- [x] 09 DeepSeek client and agent loop
+- [ ] 10 Offline fallback parser — spec drafted
 - [ ] 11 Chat UI (Act 1 done)
 - [ ] 12 First Vercel deploy
 - [ ] 13 Mock merchant page
@@ -118,6 +118,10 @@ before it's built. What each unit contains and when it counts as done is in
   and the temporary dev panel. **Golden-path steps 3–4 work on screen**
   (triggered by the dev panel). See `feature_specs/08-trust-receipt.md` →
   Built.
+- **Unit 09 DeepSeek client and agent loop** (Sat 14 Nov): `/api/chat` with 4
+  validated tools and a bounded loop, using `deepseek-v4-pro` with thinking
+  disabled (both measured live). **Golden-path steps 2–3 work through the
+  API.** See `feature_specs/09-agent-loop.md` → Built.
 
 ## In Progress
 
@@ -125,9 +129,8 @@ before it's built. What each unit contains and when it counts as done is in
 
 ## Next Up
 
-- Developer answers the questions in `09-agent-loop.md` (including the
-  DeepSeek key and model id).
-- Build and verify Unit 09, tick it above, then write `10-fallback-parser.md`.
+- Developer answers the questions in `10-fallback-parser.md`.
+- Build and verify Unit 10, tick it above, then write `11-chat-ui.md`.
 
 ## Open Questions
 
@@ -172,6 +175,9 @@ All decided Sat 14 Nov 2026:
   asked for the optimal choice, Sat 14 Nov). It made `next dev` rewrite
   `AGENTS.md` on every run and asked agents to send feedback to Next.js;
   neither helps TrustPath.
+- **`deepseek-v4-pro`, thinking explicitly disabled** (Unit 09, measured
+  against `deepseek-flash` on the evaluation cases; omitting `thinking`
+  turns it on).
 - **No multi-user sign-in.** Asked during Unit 02 and kept out of scope.
 - **lucide-react v1 icon names** (`CircleCheck`, `TriangleAlert`, `OctagonX`,
   `House`) replace the older aliases in `ui-context.md`.
@@ -185,7 +191,7 @@ All decided Sat 14 Nov 2026:
   agents" from the brief. Not chosen: the scam-coaching detector (now a
   stretch goal) and a separate signed-approval token. Approval binding uses a
   payload hash plus a single-use status flip in the DB instead.
-- **DeepSeek (`deepseek-flash`)** with thinking disabled, called via `fetch`
+- **DeepSeek (`deepseek-v4-pro` since Unit 09; originally `deepseek-flash`)** with thinking disabled, called via `fetch`
   on its OpenAI-compatible API. This was the developer's choice. The legacy
   `deepseek-chat` is discontinued. A rule-based fallback protects filming day.
 - **Supabase + Vercel.** This was the developer's choice over in-memory. The
