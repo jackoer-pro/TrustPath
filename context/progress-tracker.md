@@ -5,13 +5,13 @@ Update this file after every meaningful implementation change.
 ## Current Phase
 
 - Phase A (Foundation) complete: Units 01–08 done. Phase B: Units 09–12 done;
-  **Act 1 passes end to end on the public URL.** Unit 13 done. Unit 14
-  spec drafted, awaiting clarification.
+  **Act 1 passes end to end on the public URL.** Units 13–14 done
+  (step 6 shield card works). Unit 15 spec drafted, awaiting clarification.
 
 ## Current Goal
 
 - Answer the "Clarify before building" questions in
-  `context/feature_specs/14-shield-card.md`, then build Unit 14.
+  `context/feature_specs/15-purchase-flow.md`, then build Unit 15.
 
 ## Schedule
 
@@ -52,8 +52,8 @@ before it's built. What each unit contains and when it counts as done is in
 - [x] 11 Chat UI (Act 1 done)
 - [x] 12 First Vercel deploy
 - [x] 13 Mock merchant page
-- [ ] 14 Product reading and shield card (step 6) — spec drafted
-- [ ] 15 Purchase flow (steps 5–7)
+- [x] 14 Product reading and shield card (step 6)
+- [ ] 15 Purchase flow (steps 5–7) — spec drafted
 - [ ] 16 Simulated compromised agent
 - [ ] 17 Fraud rules (pure)
 - [ ] 18 Card authorisation pipeline
@@ -138,6 +138,10 @@ before it's built. What each unit contains and when it counts as done is in
   truth for prices, and `/shop/aurora-anc` with the hidden instruction in an
   HTML comment and a hidden span. See `feature_specs/13-merchant-page.md` →
   Built.
+- **Unit 14 Product reading and shield card** (Sun 15 Nov): `view_product`
+  (catalogue only, scanned, wrapped as untrusted), `ShieldCard`, and an
+  `injection_blocked` incident per turn. **Golden-path step 6 works online
+  and offline.** See `feature_specs/14-shield-card.md` → Built.
 
 ## In Progress
 
@@ -145,10 +149,10 @@ before it's built. What each unit contains and when it counts as done is in
 
 ## Next Up
 
-- Developer answers the questions in `14-shield-card.md`.
+- Developer answers the questions in `15-purchase-flow.md`.
 - Developer: set Vercel `DEMO_ADMIN_KEY` to the generated production key and
   redeploy (see `12-first-deploy.md` → Built).
-- Build and verify Unit 14, tick it above, then write `15-purchase-flow.md`.
+- Build and verify Unit 15, tick it above, then write `16-compromised-agent.md`.
 
 ## Open Questions
 

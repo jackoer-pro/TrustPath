@@ -7,6 +7,7 @@ import { AccountSummary } from "./AccountSummary";
 import { ChatInput } from "./ChatInput";
 import { ChatThread, type ChatMsg } from "./ChatThread";
 import { PinDialog, type ApproveResult } from "./PinDialog";
+import { ShieldCard } from "./ShieldCard";
 import { TrustReceipt, type ReceiptStatus } from "./TrustReceipt";
 import { useCustomerState } from "./useCustomerState";
 
@@ -94,15 +95,19 @@ export function HomeScreen() {
           messages={messages}
           pending={pending}
           onSuggestion={send}
-          renderCard={(a) => (
-            <TrustReceipt
-              action={a}
-              {...statusOf(a)}
-              note={local[a.id]?.note}
-              onApprove={() => setPinFor(a)}
-              onCancel={() => cancel(a)}
-            />
-          )}
+          renderCard={(c) =>
+            c.type === "shield" ? (
+              <ShieldCard card={c} />
+            ) : (
+              <TrustReceipt
+                action={c.action}
+                {...statusOf(c.action)}
+                note={local[c.action.id]?.note}
+                onApprove={() => setPinFor(c.action)}
+                onCancel={() => cancel(c.action)}
+              />
+            )
+          }
         />
         <ChatInput disabled={pending} onSend={send} />
       </section>

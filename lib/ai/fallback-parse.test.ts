@@ -60,6 +60,11 @@ test("unrelated text → nothing", () => {
   assert.deepEqual(parse(u("What's the weather like?")), { calls: [], asks: [], wantsLeft: false });
 });
 
+test("shop link → view_product, no transfer", () => {
+  const r = parse(u("Buy these headphones for $129 https://trust-path-five.vercel.app/shop/aurora-anc"));
+  assert.deepEqual(r.calls, [{ name: "view_product", args: { productIdOrUrl: "https://trust-path-five.vercel.app/shop/aurora-anc" } }]);
+});
+
 test("transactions", () => {
   assert.deepEqual(parse(u("Show my recent transactions")).calls, [{ name: "get_recent_transactions", args: { limit: 5 } }]);
 });

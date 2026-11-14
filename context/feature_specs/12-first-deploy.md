@@ -76,8 +76,8 @@ best option on 2–4:
 - [x] The response header `x-vercel-id` shows `syd1`.
 - [x] No secrets in the client bundle (grep the downloaded JS for `sb_secret`
       and `sk-`).
-- [ ] Merging to `main` triggers a new production deploy automatically.
-      (Confirm on the next code merge; Git integration is connected.)
+- [x] Merging to `main` triggers a new production deploy automatically
+      (confirmed with the Unit 13 merge: live within about 60 s).
 
 ## Built (filled in after completion)
 

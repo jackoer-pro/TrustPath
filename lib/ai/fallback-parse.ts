@@ -6,6 +6,7 @@ export type Known = { alias: string; display: string }; // e.g. { alias: "mum", 
 export type Call =
   | { name: "get_accounts"; args: Record<string, never> }
   | { name: "get_recent_transactions"; args: { limit: number } }
+  | { name: "view_product"; args: { productIdOrUrl: string } }
   | { name: "prepare_transfer"; args: { to: string; amount: string; fromAccount?: string } };
 export type ParseResult = { calls: Call[]; asks: string[]; wantsLeft: boolean };
 type Msg = { role: "user" | "assistant"; content: string };
@@ -75,6 +76,9 @@ export function parseIntents(history: Msg[], known: Known[]): ParseResult {
       return out;
     }
   }
+
+  const shopLink = /\S*\/shop\/[a-z0-9-]+/.exec(text)?.[0];
+  if (shopLink) out.calls.push({ name: "view_product", args: { productIdOrUrl: shopLink } });
 
   for (const c of clauses(text)) parseClause(c, known, out);
   if (out.wantsLeft && !out.calls.some((c) => c.name === "prepare_transfer")) out.calls.push({ name: "get_accounts", args: {} });
