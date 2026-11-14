@@ -5,13 +5,13 @@ Update this file after every meaningful implementation change.
 ## Current Phase
 
 - Phase A (Foundation) complete: Units 01–08 done. Phase B: Units 09–12 done;
-  **Act 1 passes end to end on the public URL.** Unit 13 spec drafted,
-  awaiting clarification.
+  **Act 1 passes end to end on the public URL.** Unit 13 done. Unit 14
+  spec drafted, awaiting clarification.
 
 ## Current Goal
 
 - Answer the "Clarify before building" questions in
-  `context/feature_specs/13-merchant-page.md`, then build Unit 13.
+  `context/feature_specs/14-shield-card.md`, then build Unit 14.
 
 ## Schedule
 
@@ -51,8 +51,8 @@ before it's built. What each unit contains and when it counts as done is in
 - [x] 10 Offline fallback parser
 - [x] 11 Chat UI (Act 1 done)
 - [x] 12 First Vercel deploy
-- [ ] 13 Mock merchant page — spec drafted
-- [ ] 14 Product reading and shield card (step 6)
+- [x] 13 Mock merchant page
+- [ ] 14 Product reading and shield card (step 6) — spec drafted
 - [ ] 15 Purchase flow (steps 5–7)
 - [ ] 16 Simulated compromised agent
 - [ ] 17 Fraud rules (pure)
@@ -134,6 +134,10 @@ before it's built. What each unit contains and when it counts as done is in
 - **Unit 12 First Vercel deploy** (Sat 14 Nov): **https://trust-path-five.vercel.app**,
   functions in `syd1`, no secrets in the bundles, and Act 1 verified on the
   public URL. See `feature_specs/12-first-deploy.md` → Built.
+- **Unit 13 Mock merchant page** (Sat 14 Nov): the catalogue as the source of
+  truth for prices, and `/shop/aurora-anc` with the hidden instruction in an
+  HTML comment and a hidden span. See `feature_specs/13-merchant-page.md` →
+  Built.
 
 ## In Progress
 
@@ -141,10 +145,10 @@ before it's built. What each unit contains and when it counts as done is in
 
 ## Next Up
 
-- Developer answers the questions in `13-merchant-page.md`.
+- Developer answers the questions in `14-shield-card.md`.
 - Developer: set Vercel `DEMO_ADMIN_KEY` to the generated production key and
   redeploy (see `12-first-deploy.md` → Built).
-- Build and verify Unit 13, tick it above, then write `14-shield-card.md`.
+- Build and verify Unit 14, tick it above, then write `15-purchase-flow.md`.
 
 ## Open Questions
 
@@ -157,8 +161,6 @@ before it's built. What each unit contains and when it counts as done is in
 - **Accounts and keys.** DeepSeek API key with credits, a Supabase project
   (Sydney region) and a Vercel account. Check that all three exist before
   Unit 02.
-- **Product image** for the headphones on the shop page. Use a neutral
-  placeholder or a generated image; don't use stock photos of real brands.
 - **Positioning claims.** Verify the bank-feature claims (CommBank Companion,
   CommBank agentic fraud rules, Westpac SafeBlock/SaferPay/SafeCall) before
   saying them on camera.
@@ -195,6 +197,8 @@ All decided Sat 14 Nov 2026:
 - **The customer app stays phone-shaped on laptops** (developer asked, Unit
   11). The phone + bank console side by side is the story; Unit 26 scales
   the phone up in `/demo` so it's big on the recording.
+- **Shop product photo:** Jason Leung on Unsplash (Unsplash License, no
+  visible brand), chosen in Unit 13 at the developer's request.
 - **No multi-user sign-in.** Asked during Unit 02 and kept out of scope.
 - **lucide-react v1 icon names** (`CircleCheck`, `TriangleAlert`, `OctagonX`,
   `House`) replace the older aliases in `ui-context.md`.
