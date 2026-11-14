@@ -1,6 +1,6 @@
 # 04 — Live balances on Home
 
-Status: draft
+Status: done
 
 ## Goal
 
@@ -49,25 +49,34 @@ so a change anywhere (approval, reset) appears within about 2 seconds.
 
 ## Clarify before building
 
-1. **Polling while the tab is hidden.** Proposed: pause it, so a forgotten
-   tab doesn't hammer Supabase. It resumes instantly when the tab is shown.
-   OK?
-2. **Last four digits on the chips** (`•••• 5678`). Proposed: yes, small and
-   muted, like a real banking app. Or name and balance only?
-3. **Error copy.** "Reconnecting…" and "Can't load your accounts right now."
-   OK?
+Answered by the developer, Sat 14 Nov: all three proposals accepted.
+
+1. Polling pauses while the tab is hidden and resumes as soon as it's shown.
+2. The chips show `•••• 5678` in small muted text.
+3. The error copy is "Reconnecting…" and "Can't load your accounts right
+   now."
 
 ## Verify when done
 
-- [ ] Home shows $1,500.00 and $4,200.00 from the DB (change a balance in the
+- [x] Home shows $1,500.00 and $4,200.00 from the DB (change a balance in the
       Supabase table editor and it updates within 2 s; then reset).
-- [ ] `POST /api/demo/reset` puts Home back within 2 s, with no reload.
-- [ ] Network tab: one request every 2 s; none while the tab is hidden.
-- [ ] Stop the dev server: the balances stay and "Reconnecting…" appears.
+- [x] `POST /api/demo/reset` puts Home back within 2 s, with no reload.
+- [x] Network tab: one request every 2 s; none while the tab is hidden.
+- [x] Stop the dev server: the balances stay and "Reconnecting…" appears.
       Start it again and the note disappears.
-- [ ] The first paint shows placeholders, not $0.00.
-- [ ] `npm run build` and `npm run lint` pass. No console errors.
+- [x] The first paint shows placeholders, not $0.00.
+- [x] `npm run build` and `npm run lint` pass. No console errors.
 
 ## Built (filled in after completion)
 
--
+Sat 14 Nov.
+
+- Built as specced: `useCustomerState` (2 s poll, paused while hidden,
+  refetches on `visibilitychange`, keeps the last good state),
+  `AccountSummary` and `HomeScreen`. `app/(customer)/page.tsx` is now a thin
+  wrapper.
+- Verified with headless Chrome over the DevTools protocol against live
+  Supabase. Every check above passed: a DB edit showed within 2.6 s, there
+  were 3 requests per 6 s and 0 while hidden, "Reconnecting…" appeared with
+  the server down and cleared when it came back, and there were no console
+  errors.
