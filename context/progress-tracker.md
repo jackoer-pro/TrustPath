@@ -4,13 +4,13 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
-- Phase A (Foundation). Units 01–05 done. Unit 06 spec drafted, awaiting
+- Phase A (Foundation). Units 01–06 done. Unit 07 spec drafted, awaiting
   clarification.
 
 ## Current Goal
 
 - Answer the "Clarify before building" questions in
-  `context/feature_specs/06-prepare-transfer.md`, then build Unit 06.
+  `context/feature_specs/07-approve-cancel.md`, then build Unit 07.
 
 ## Schedule
 
@@ -40,8 +40,8 @@ before it's built. What each unit contains and when it counts as done is in
 - [x] 03 Server foundations and state API
 - [x] 04 Live balances on Home (step 1)
 - [x] 05 Trust engine (pure)
-- [ ] 06 Prepare transfer service — spec drafted
-- [ ] 07 Approve and cancel routes
+- [x] 06 Prepare transfer service
+- [ ] 07 Approve and cancel routes — spec drafted
 - [ ] 08 Trust Receipt and PIN dialog
 
 **Phase B — The assistant**
@@ -104,6 +104,10 @@ before it's built. What each unit contains and when it counts as done is in
 - **Unit 05 Trust engine (pure)** (Sat 14 Nov): policy R1–R7, intent
   provenance with word-numbers, the content scanner and the payload hash.
   30 tests via `npm test`. See `feature_specs/05-trust-engine.md` → Built.
+- **Unit 06 Prepare transfer service** (Sat 14 Nov): `prepareTransfer()`
+  (resolve, provenance, assess, hash, store, audit), `createIncident()` with
+  injection incidents on R2 blocks, and the temporary dev route. Verified
+  live. See `feature_specs/06-prepare-transfer.md` → Built.
 
 ## In Progress
 
@@ -111,11 +115,16 @@ before it's built. What each unit contains and when it counts as done is in
 
 ## Next Up
 
-- Developer answers the questions in `06-prepare-transfer.md`.
-- Build and verify Unit 06, tick it above, then write `07-approve-cancel.md`.
+- Developer answers the questions in `07-approve-cancel.md`.
+- Build and verify Unit 07, tick it above, then write `08-trust-receipt.md`.
 
 ## Open Questions
 
+- **`next dev` rewrites `AGENTS.md`** with a "Report Next.js feedback" block,
+  because `experimental.agentFeedback: true` is set in `next.config.ts`. The
+  block asks agents to send anonymised feedback to Next.js. Keep it
+  (commit it), or turn the flag off? Until decided, it's reverted after each
+  dev run and no feedback is sent.
 - **Team name and teammate's name.** Needed for the submission email.
 - **Is building before Monday OK?** The handbook has no rule against it but
   says the competition days are for building. Ask the Griffith lead mentor on
