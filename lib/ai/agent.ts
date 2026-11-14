@@ -1,9 +1,9 @@
 import "server-only";
 import { audit } from "@/lib/audit";
-import { AppError } from "@/lib/http";
 import type { PreparedAction } from "@/lib/banking/actions";
 import { chat, DeepSeekError, type LlmMessage } from "./deepseek";
 import { SYSTEM_PROMPT } from "./prompts";
+import { runFallback } from "./fallback";
 import { runTool, TOOL_DEFS } from "./tools";
 
 export type ChatMessage = { role: "user" | "assistant"; content: string };
@@ -40,9 +40,13 @@ export async function runAgent(history: ChatMessage[]): Promise<AgentResult> {
     }
   } catch (e) {
     if (!(e instanceof DeepSeekError)) throw e;
-    console.error(e);
-    // Unit 10 replaces this with the offline fallback parser.
-    throw new AppError("AI_UNAVAILABLE", "The assistant is unavailable right now. Please try again.", 503);
+    console.error(e.message);
+    // Actions already prepared this turn: keep them, never re-run (no duplicates).
+    if (toolsUsed.includes("prepare_transfer")) {
+      await audit("ai_agent", "chat.turn", "chat", null, { offline: true, partial: true, tools: toolsUsed, cards: cards.length });
+      return { reply: "I've prepared what you asked for below. Please review each one.", cards, offline: true };
+    }
+    return runFallback(recent);
   }
 
   await audit("ai_agent", "chat.turn", "chat", null, { tools: toolsUsed, cards: cards.length });

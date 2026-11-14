@@ -2,7 +2,7 @@ import "server-only";
 
 // The only file that talks to DeepSeek (OpenAI-compatible API). Swap the provider here for a bank-approved host.
 const URL = "https://api.deepseek.com/chat/completions";
-const TIMEOUT_MS = 20_000;
+const CHAT_TIMEOUT_MS = 12_000; // falls back to the offline parser while the camera is still rolling
 
 export class DeepSeekError extends Error {}
 
@@ -20,6 +20,7 @@ export async function chat(opts: {
   tools?: ToolDef[];
   toolChoice?: "auto" | "none";
   jsonMode?: boolean;
+  timeoutMs?: number;
 }): Promise<Extract<LlmMessage, { role: "assistant" }>> {
   const key = process.env.DEEPSEEK_API_KEY;
   if (!key) throw new DeepSeekError("Missing env DEEPSEEK_API_KEY");
@@ -37,7 +38,7 @@ export async function chat(opts: {
         ...(opts.tools && { tools: opts.tools, tool_choice: opts.toolChoice ?? "auto" }),
         ...(opts.jsonMode && { response_format: { type: "json_object" } }),
       }),
-      signal: AbortSignal.timeout(TIMEOUT_MS),
+      signal: AbortSignal.timeout(opts.timeoutMs ?? CHAT_TIMEOUT_MS),
     });
   } catch (e) {
     throw new DeepSeekError(`DeepSeek request failed: ${(e as Error).name}`);

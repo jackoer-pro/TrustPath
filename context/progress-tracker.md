@@ -4,13 +4,13 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
-- Phase A (Foundation) complete: Units 01–08 done. Phase B: Unit 09 done.
-  Unit 10 spec drafted, awaiting clarification.
+- Phase A (Foundation) complete: Units 01–08 done. Phase B: Units 09–10 done.
+  Unit 11 spec drafted, awaiting clarification.
 
 ## Current Goal
 
 - Answer the "Clarify before building" questions in
-  `context/feature_specs/10-fallback-parser.md`, then build Unit 10.
+  `context/feature_specs/11-chat-ui.md`, then build Unit 11.
 
 ## Schedule
 
@@ -47,8 +47,8 @@ before it's built. What each unit contains and when it counts as done is in
 **Phase B — The assistant**
 
 - [x] 09 DeepSeek client and agent loop
-- [ ] 10 Offline fallback parser — spec drafted
-- [ ] 11 Chat UI (Act 1 done)
+- [x] 10 Offline fallback parser
+- [ ] 11 Chat UI (Act 1 done) — spec drafted
 - [ ] 12 First Vercel deploy
 - [ ] 13 Mock merchant page
 - [ ] 14 Product reading and shield card (step 6)
@@ -122,6 +122,10 @@ before it's built. What each unit contains and when it counts as done is in
   validated tools and a bounded loop, using `deepseek-v4-pro` with thinking
   disabled (both measured live). **Golden-path steps 2–3 work through the
   API.** See `feature_specs/09-agent-loop.md` → Built.
+- **Unit 10 Offline fallback parser** (Sat 14 Nov): a pure intent parser
+  (tested) driving the same tools; automatic fallback on a missing key, an
+  error or a 12 s timeout. **Golden-path steps 2–3 work with no LLM.** See
+  `feature_specs/10-fallback-parser.md` → Built.
 
 ## In Progress
 
@@ -129,8 +133,8 @@ before it's built. What each unit contains and when it counts as done is in
 
 ## Next Up
 
-- Developer answers the questions in `10-fallback-parser.md`.
-- Build and verify Unit 10, tick it above, then write `11-chat-ui.md`.
+- Developer answers the questions in `11-chat-ui.md`.
+- Build and verify Unit 11, tick it above, then write `12-first-deploy.md`.
 
 ## Open Questions
 
