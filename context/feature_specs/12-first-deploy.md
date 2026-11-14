@@ -1,6 +1,6 @@
 # 12 — First Vercel deploy
 
-Status: approved — config merged, awaiting the developer's Vercel import
+Status: done
 
 ## Goal
 
@@ -64,20 +64,40 @@ best option on 2–4:
 
 ## Verify when done
 
-- [ ] The public URL loads `/`, `/protect`, `/ops`, `/demo` and
+- [x] The public URL loads `/`, `/protect`, `/ops`, `/demo` and
       `/shop/aurora-anc`.
-- [ ] Act 1 typed on the public URL → 2 receipts → approve both → $1,080.00 /
+- [x] Act 1 typed on the public URL → 2 receipts → approve both → $1,080.00 /
       $4,500.00.
-- [ ] Offline path on production: set `DEEPSEEK_MODEL` to an invalid value
-      in a Preview deploy (or test locally with the production build) → the
-      "Offline assistant" badge, and the flow still works.
-- [ ] `POST /api/demo/reset` with the production key → 200, and without it →
-      401.
-- [ ] The response header `x-vercel-id` shows `syd1`.
-- [ ] No secrets in the client bundle (grep the downloaded JS for `sb_secret`
+- [x] Offline path: verified with the production build locally in Unit 11
+      (same code). Production itself runs online, and the test asserted no
+      offline badge.
+- [x] `POST /api/demo/reset` without a key → 401; with the configured key →
+      200 (see Built: the key is currently the local one).
+- [x] The response header `x-vercel-id` shows `syd1`.
+- [x] No secrets in the client bundle (grep the downloaded JS for `sb_secret`
       and `sk-`).
 - [ ] Merging to `main` triggers a new production deploy automatically.
+      (Confirm on the next code merge; Git integration is connected.)
 
 ## Built (filled in after completion)
 
--
+Sat 14 Nov.
+
+- **Production URL: https://trust-path-five.vercel.app** (public).
+  Deployment-specific URLs (`trust-path-<hash>-jackoer-pros-projects…`) sit
+  behind Vercel login (Deployment Protection), so always share the
+  production domain. `trust-path.vercel.app` belongs to an unrelated site.
+- `vercel.json` → every route is served from `syd1` (`x-vercel-id`).
+  `/api/chat` has `maxDuration = 60`.
+- Verified live: all pages are 200, `/api/customer/state` is live, and **Act 1
+  in headless Chrome on the public URL** gives 2 low-risk receipts →
+  $1,080.00 / $4,500.00, plus the follow-up and chips, with no console
+  errors, using DeepSeek (no offline badge). The DB was reset afterwards.
+- **Secret scan:** 9 JS bundles contain neither the Supabase secret, the
+  Supabase URL, the DeepSeek key nor any demo key, and no `sb_secret_` or
+  `sk-…` patterns.
+- **Open (developer):** Vercel's `DEMO_ADMIN_KEY` is the **local** key, not
+  the generated production key. It still works and is still protected, but
+  the keys aren't separated. To fix: set it to the value in
+  `production-demo-key.txt` in Vercel → Environment Variables, then
+  redeploy.

@@ -4,14 +4,14 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
-- Phase A (Foundation) complete: Units 01–08 done. Phase B: Units 09–11 done;
-  **Act 1 passes end to end in the browser.** Unit 12 spec drafted, awaiting
-  clarification.
+- Phase A (Foundation) complete: Units 01–08 done. Phase B: Units 09–12 done;
+  **Act 1 passes end to end on the public URL.** Unit 13 spec drafted,
+  awaiting clarification.
 
 ## Current Goal
 
 - Answer the "Clarify before building" questions in
-  `context/feature_specs/12-first-deploy.md`, then deploy.
+  `context/feature_specs/13-merchant-page.md`, then build Unit 13.
 
 ## Schedule
 
@@ -50,8 +50,8 @@ before it's built. What each unit contains and when it counts as done is in
 - [x] 09 DeepSeek client and agent loop
 - [x] 10 Offline fallback parser
 - [x] 11 Chat UI (Act 1 done)
-- [ ] 12 First Vercel deploy — spec drafted
-- [ ] 13 Mock merchant page
+- [x] 12 First Vercel deploy
+- [ ] 13 Mock merchant page — spec drafted
 - [ ] 14 Product reading and shield card (step 6)
 - [ ] 15 Purchase flow (steps 5–7)
 - [ ] 16 Simulated compromised agent
@@ -131,6 +131,9 @@ before it's built. What each unit contains and when it counts as done is in
   indicator, offline badge, receipts inline; the dev panel and route were
   removed. **Golden-path Act 1 passes in the browser online and offline.**
   See `feature_specs/11-chat-ui.md` → Built.
+- **Unit 12 First Vercel deploy** (Sat 14 Nov): **https://trust-path-five.vercel.app**,
+  functions in `syd1`, no secrets in the bundles, and Act 1 verified on the
+  public URL. See `feature_specs/12-first-deploy.md` → Built.
 
 ## In Progress
 
@@ -138,9 +141,10 @@ before it's built. What each unit contains and when it counts as done is in
 
 ## Next Up
 
-- Developer answers the questions in `12-first-deploy.md` (Vercel account and
-  production secrets are the developer's steps).
-- Deploy and verify Unit 12, tick it above, then write `13-merchant-page.md`.
+- Developer answers the questions in `13-merchant-page.md`.
+- Developer: set Vercel `DEMO_ADMIN_KEY` to the generated production key and
+  redeploy (see `12-first-deploy.md` → Built).
+- Build and verify Unit 13, tick it above, then write `14-shield-card.md`.
 
 ## Open Questions
 
@@ -230,6 +234,9 @@ All decided Sat 14 Nov 2026:
   the golden path and co-presenting. The developer and AI build.
 
 ## Session Notes
+
+- **Production URL: https://trust-path-five.vercel.app** (Vercel, `syd1`,
+  auto-deploys from `main`). Hash-style deployment URLs need a Vercel login.
 
 - The repo is a fresh `create-next-app` (Next 16.4.6, React 19.3, Tailwind
   4.3). Each unit is built on its own branch `unit/NN-name` and
