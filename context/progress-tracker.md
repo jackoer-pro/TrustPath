@@ -4,13 +4,13 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
-- Phase A (Foundation). Units 01–04 done. Unit 05 spec drafted, awaiting
+- Phase A (Foundation). Units 01–05 done. Unit 06 spec drafted, awaiting
   clarification.
 
 ## Current Goal
 
 - Answer the "Clarify before building" questions in
-  `context/feature_specs/05-trust-engine.md`, then build Unit 05.
+  `context/feature_specs/06-prepare-transfer.md`, then build Unit 06.
 
 ## Schedule
 
@@ -39,8 +39,8 @@ before it's built. What each unit contains and when it counts as done is in
 - [x] 02 Database schema and seed
 - [x] 03 Server foundations and state API
 - [x] 04 Live balances on Home (step 1)
-- [ ] 05 Trust engine (pure) — spec drafted
-- [ ] 06 Prepare transfer service
+- [x] 05 Trust engine (pure)
+- [ ] 06 Prepare transfer service — spec drafted
 - [ ] 07 Approve and cancel routes
 - [ ] 08 Trust Receipt and PIN dialog
 
@@ -101,6 +101,9 @@ before it's built. What each unit contains and when it counts as done is in
 - **Unit 04 Live balances on Home** (Sat 14 Nov): the `useCustomerState`
   polling hook, `AccountSummary` and `HomeScreen`. **Golden-path step 1
   works from the DB.** See `feature_specs/04-live-balances.md` → Built.
+- **Unit 05 Trust engine (pure)** (Sat 14 Nov): policy R1–R7, intent
+  provenance with word-numbers, the content scanner and the payload hash.
+  30 tests via `npm test`. See `feature_specs/05-trust-engine.md` → Built.
 
 ## In Progress
 
@@ -108,8 +111,8 @@ before it's built. What each unit contains and when it counts as done is in
 
 ## Next Up
 
-- Developer answers the questions in `05-trust-engine.md`.
-- Build and verify Unit 05, tick it above, then write `06-prepare-transfer.md`.
+- Developer answers the questions in `06-prepare-transfer.md`.
+- Build and verify Unit 06, tick it above, then write `07-approve-cancel.md`.
 
 ## Open Questions
 
@@ -146,6 +149,8 @@ All decided Sat 14 Nov 2026:
   it. The DB allows it only on `blocked` rows.
 - **Live-data `GET` routes call `await connection()`** so `cacheComponents`
   never prerenders them at build time.
+- **`package.json` has `"type": "module"`** so Node runs the `.ts` tests
+  without module-type warnings.
 - **No multi-user sign-in.** Asked during Unit 02 and kept out of scope.
 - **lucide-react v1 icon names** (`CircleCheck`, `TriangleAlert`, `OctagonX`,
   `House`) replace the older aliases in `ui-context.md`.
