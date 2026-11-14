@@ -1,6 +1,6 @@
 # 03 — Server foundations and state API
 
-Status: approved — built, awaiting live verification
+Status: done
 
 ## Goal
 
@@ -89,13 +89,13 @@ Answered by the developer, Sat 14 Nov:
 
 ## Verify when done
 
-- [ ] `curl localhost:3000/api/customer/state` → `ok: true` with Everyday
+- [x] `curl localhost:3000/api/customer/state` → `ok: true` with Everyday
       150000 and Goal Saver 420000 cents, card `4821` active, empty
       actions, notifications and incidents.
-- [ ] `curl -X POST localhost:3000/api/demo/reset` without the header → 401
-      `DEMO_KEY_REQUIRED` ✓. With the wrong key → 401 ✓. With the right key →
+- [x] `curl -X POST localhost:3000/api/demo/reset` without the header → 401
+      `DEMO_KEY_REQUIRED`. With the wrong key → 401. With the right key →
       `ok: true`, and one `demo.reset` audit row exists.
-- [ ] Reset takes under 3 seconds.
+- [x] Reset takes under 3 seconds.
 - [x] With the Supabase keys missing → `500 INTERNAL` with a generic
       message; the server log names the missing variable.
 - [x] `grep -rn "NEXT_PUBLIC_" .` (excluding `node_modules`/`.next`) finds
@@ -104,4 +104,19 @@ Answered by the developer, Sat 14 Nov:
 
 ## Built (filled in after completion)
 
--
+Sat 14 Nov.
+
+- Built as specced. Live checks against Supabase: state returns Everyday
+  150000 / Goal Saver 420000, card `4821` active, nothing else; only the BSB
+  and last four digits (`****5678`, `****4321`) leave the server. Reset
+  returns `ok`, writes one `system / demo.reset` audit row and takes about
+  0.2 s warm (1.6 s on the first, cold call).
+- **Demo key check:** `checkDemoKey(req)` returns the 401 `Response` (or
+  `null`) instead of throwing, so a route is
+  `return checkDemoKey(req) ?? run(service)`. Same behaviour as the spec.
+- **`GET` routes call `await connection()` first.** With `cacheComponents`,
+  a `GET` handler can otherwise be prerendered at build time, which would
+  query Supabase during `next build`. Every live-data `GET` route must do
+  this (added to `code-standards.md`).
+- `lib/banking/constants.ts` holds all six seed ids, since later units need
+  the card and account ids.
