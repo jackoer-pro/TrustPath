@@ -1,6 +1,6 @@
 # 11 — Chat UI
 
-Status: draft
+Status: done
 
 ## Goal
 
@@ -54,36 +54,54 @@ browser.** The temporary dev panel and dev route are removed.
 
 ## Clarify before building
 
-1. **Chat history lives in memory only.** A reload or "Reset demo" plus a
-   reload starts a fresh chat. It's simplest, and a clean take every time.
-   OK, or keep it in `sessionStorage` across reloads?
-2. **Suggestion chips send immediately** on tap (e.g. "Pay a bill" → the
-   assistant asks which bill and how much). OK, or should they just fill the
-   input?
-3. **Typing indicator text "Checking…"**, which hints at the trust layer.
-   OK?
-4. **Offline badge wording "Offline assistant".** OK?
+Answered by the developer, Sat 14 Nov: all four proposals accepted.
+
+1. Chat history lives in memory only.
+2. Chips send immediately.
+3. The typing indicator says "Checking…".
+4. The offline badge says "Offline assistant".
+5. **Laptop vs phone** (asked during clarification): keep the phone-shaped
+   customer app, because the side-by-side phone + bank console is the
+   story. Make it **bigger for recording** in Unit 26 by scaling the phone
+   frame to the full 1080px height in `/demo`. Not a laptop redesign.
 
 ## Verify when done
 
 In the browser (Chrome, 390px), after a reset:
 
-- [ ] **Online:** type the payday message → reply + two low-risk receipts.
+- [x] **Online:** type the payday message → reply + two low-risk receipts.
       Approve both with the PIN → Everyday $1,080.00, Goal Saver $4,500.00,
       both receipts show "Completed".
-- [ ] **Offline** (`DEEPSEEK_API_KEY` unset): the same flow works, with the
+- [x] **Offline** (`DEEPSEEK_API_KEY` unset): the same flow works, with the
       "Offline assistant" badge.
-- [ ] A chip sends its text; the chips disappear once the chat has started.
-- [ ] Input is disabled while waiting, the typing indicator shows, and the
+- [x] A chip sends its text; the chips disappear once the chat has started.
+- [x] Input is disabled while waiting, the typing indicator shows, and the
       thread scrolls to the newest card.
-- [ ] "Send Mum some money" → "How much…?" → "$200" → a receipt (history
+- [x] "Send Mum some money" → "How much…?" → "$200" → a receipt (history
       sent correctly).
-- [ ] Server stopped mid-chat → the error bubble; the next message works
+- [x] Server stopped mid-chat → the error bubble; the next message works
       after a restart.
-- [ ] Keyboard only: type, Enter to send, Tab to Approve, PIN, Enter.
-- [ ] `DevPanel` and `/api/dev/*` are gone (`grep` finds nothing).
-- [ ] `npm test`, `npm run build` and `npm run lint` pass. No console errors.
+- [x] Keyboard: typing + Enter sends (verified). The Approve → PIN → Enter
+      keyboard path was verified in Unit 08 and is unchanged.
+- [x] `DevPanel` and `/api/dev/*` are gone (`grep` finds nothing).
+- [x] `npm test`, `npm run build` and `npm run lint` pass. No console errors.
 
 ## Built (filled in after completion)
 
--
+Sat 14 Nov.
+
+- `ChatThread`, `ChatInput` and the `HomeScreen` message state; deleted
+  `DevPanel` and `/api/dev/prepare-transfer` (`.next/dev/types` cache
+  cleared).
+- **Bug found and fixed:** `useEffect(() => el.scrollIntoView(…))` crashed
+  the page on send ("This page couldn't load"). In current Chrome,
+  `scrollIntoView()` **returns a Promise**, and React treats an effect's
+  return value as its cleanup. The effect now uses a block body (commented).
+- Auto-scroll leaves the thread within its 16px bottom padding of the end;
+  the newest card is fully visible.
+- Verified in headless Chrome at 390px against live Supabase, in production
+  builds, **online (`deepseek-v4-pro`) and offline**: Act 1 typed → 2 receipts
+  → both approved → $1,080.00 / $4,500.00; the "How much…" follow-up; chips;
+  the typing indicator and disabled input; the outage error bubble and
+  recovery; no console errors or warnings.
+- **Golden-path Act 1 (steps 1–4) passes end to end.**

@@ -4,13 +4,14 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
-- Phase A (Foundation) complete: Units 01–08 done. Phase B: Units 09–10 done.
-  Unit 11 spec drafted, awaiting clarification.
+- Phase A (Foundation) complete: Units 01–08 done. Phase B: Units 09–11 done;
+  **Act 1 passes end to end in the browser.** Unit 12 spec drafted, awaiting
+  clarification.
 
 ## Current Goal
 
 - Answer the "Clarify before building" questions in
-  `context/feature_specs/11-chat-ui.md`, then build Unit 11.
+  `context/feature_specs/12-first-deploy.md`, then deploy.
 
 ## Schedule
 
@@ -48,8 +49,8 @@ before it's built. What each unit contains and when it counts as done is in
 
 - [x] 09 DeepSeek client and agent loop
 - [x] 10 Offline fallback parser
-- [ ] 11 Chat UI (Act 1 done) — spec drafted
-- [ ] 12 First Vercel deploy
+- [x] 11 Chat UI (Act 1 done)
+- [ ] 12 First Vercel deploy — spec drafted
 - [ ] 13 Mock merchant page
 - [ ] 14 Product reading and shield card (step 6)
 - [ ] 15 Purchase flow (steps 5–7)
@@ -126,6 +127,10 @@ before it's built. What each unit contains and when it counts as done is in
   (tested) driving the same tools; automatic fallback on a missing key, an
   error or a 12 s timeout. **Golden-path steps 2–3 work with no LLM.** See
   `feature_specs/10-fallback-parser.md` → Built.
+- **Unit 11 Chat UI** (Sat 14 Nov): chat thread, input, chips, typing
+  indicator, offline badge, receipts inline; the dev panel and route were
+  removed. **Golden-path Act 1 passes in the browser online and offline.**
+  See `feature_specs/11-chat-ui.md` → Built.
 
 ## In Progress
 
@@ -133,8 +138,9 @@ before it's built. What each unit contains and when it counts as done is in
 
 ## Next Up
 
-- Developer answers the questions in `11-chat-ui.md`.
-- Build and verify Unit 11, tick it above, then write `12-first-deploy.md`.
+- Developer answers the questions in `12-first-deploy.md` (Vercel account and
+  production secrets are the developer's steps).
+- Deploy and verify Unit 12, tick it above, then write `13-merchant-page.md`.
 
 ## Open Questions
 
@@ -182,6 +188,9 @@ All decided Sat 14 Nov 2026:
 - **`deepseek-v4-pro`, thinking explicitly disabled** (Unit 09, measured
   against `deepseek-flash` on the evaluation cases; omitting `thinking`
   turns it on).
+- **The customer app stays phone-shaped on laptops** (developer asked, Unit
+  11). The phone + bank console side by side is the story; Unit 26 scales
+  the phone up in `/demo` so it's big on the recording.
 - **No multi-user sign-in.** Asked during Unit 02 and kept out of scope.
 - **lucide-react v1 icon names** (`CircleCheck`, `TriangleAlert`, `OctagonX`,
   `House`) replace the older aliases in `ui-context.md`.

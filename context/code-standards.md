@@ -56,6 +56,9 @@
 - Demo and simulate routes: `return checkDemoKey(req) ?? run(service)`.
 - `middleware.ts` is deprecated and renamed `proxy.ts`. We don't need one; do
   not add it.
+- `useEffect` callbacks use a block body. `scrollIntoView()` (and other
+  scroll methods) return a Promise in current Chrome, and an arrow that
+  returns it crashes React.
 - Add `'use client'` only to files that use state, effects or event handlers.
   Keep it at the leaves.
 - Root layout uses `LayoutProps<'/'>` (already in place). Fonts load through

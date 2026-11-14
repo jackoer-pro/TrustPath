@@ -108,7 +108,7 @@ on are done. "Act" and "step" refer to the golden path in
 | 23 | Bank console lists           | `GET /api/ops/state`; `CardEventList`, `IncidentList`, `AuditLog`, stat pills, 2 s polling, fade-in highlight                | 18, 20     | **Steps 8 and 11** visible in `/ops`; a new event appears within 3 s                         |
 | 24 | AI case brief                | `lib/ai/case-brief.ts` (JSON mode, template fallback), written after fraud and emergency decisions; `IncidentDetail`        | 23         | **Step 17**: brief shows what happened, the related event, measures and a next step; offline uses the template |
 | 25 | Staff review and resolve     | `POST /api/ops/incidents/[id]/review`, `POST /api/ops/incidents/[id]/resolve` (lift restrictions, unlock cards)             | 24         | **Step 18 / Act 4** passes; the AI has no path to the same effect                            |
-| 26 | Demo harness                 | `/demo` three columns: customer iframe, ops iframe, control panel with demo key and the four buttons                        | 16, 18, 25 | **Step 19**: Reset demo restores seed state in under 3 s; full golden path runs from `/demo` |
+| 26 | Demo harness                 | `/demo` three columns: customer iframe **scaled up to fill the 1080px recording height**, ops iframe, control panel with demo key and the four buttons                        | 16, 18, 25 | **Step 19**: Reset demo restores seed state in under 3 s; full golden path runs from `/demo` |
 
 ### Phase D — Rehearsal (Mon 16 evening → Tue 17 Nov 12:00pm freeze)
 
