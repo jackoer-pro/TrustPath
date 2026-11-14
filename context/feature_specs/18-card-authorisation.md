@@ -1,6 +1,6 @@
 # 18 — Card authorisation pipeline
 
-Status: draft
+Status: done
 
 ## Goal
 
@@ -62,39 +62,57 @@ API.**
 
 ## Clarify before building
 
-1. **Incident status:** declined + locked → `contained` (the threat is
-   already stopped); review → `open`. Severity = the fraud risk level (high
-   for Nova). OK?
-2. **Notifications only for declined and review.** Approved payments are
-   silent, like a real bank. OK?
-3. **The card lock never downgrades an emergency lock** (only `active` →
-   `temporarily_locked`). OK?
-4. **Request shape** `{ amount, merchant, channel, cardId? }`, with `cardId`
-   defaulting to the demo card so the demo panel only needs the first three.
-   OK?
+Answered by the developer, Sun 15 Nov: all four proposals accepted.
+
+1. Declined + locked → incident `contained`; review → `open`. Severity = the
+   fraud risk level.
+2. Notifications only for declined and review.
+3. The lock only moves `active` → `temporarily_locked`, never downgrades.
+4. Request `{ amount, merchant, channel, cardId? }`, `cardId` defaults to the
+   demo card.
 
 ## Verify when done
 
 After a reset:
 
-- [ ] Without the demo key → 401. A bad body → 400.
-- [ ] `{ amount: 3580, merchant: "Nova Electronics Online", channel:
+- [x] Without the demo key → 401. A bad body → 400.
+- [x] `{ amount: 3580, merchant: "Nova Electronics Online", channel:
       "ecommerce" }` → `declined`, `temporarily_locked`, high. The card is
       now `temporarily_locked`; there's 1 `card_fraud` incident (high,
       contained, linked to the event) and 1 notification "Was this you?"
       with the declined body; the audit rows are `fraud_engine`. Balances
       are unchanged.
-- [ ] Metro Café $14.50 in store → `approved`, no incident, no notification,
+- [x] Metro Café $14.50 in store → `approved`, no incident, no notification,
       the card is unchanged, and one event plus an audit row exist.
-- [ ] A second attempt while locked → `declined` (critical), `cardAction:
+- [x] A second attempt while locked → `declined` (critical), `cardAction:
       none`, the card stays `temporarily_locked`.
-- [ ] Three quick attempts → the third flags `rapid_repeats`.
-- [ ] `lib/fraud/**` never imports `lib/ai` (grep).
-- [ ] The customer state API now shows the notification and the open
+- [x] Three quick attempts → the third flags `rapid_repeats`.
+- [x] `lib/fraud/**` never imports `lib/ai` (grep).
+- [x] The customer state API now shows the notification and the open
       incident.
-- [ ] `npm test`, `npm run build` and `npm run lint` pass. Deployed and
+- [x] `npm test`, `npm run build` and `npm run lint` pass. Deployed and
       checked on the public URL.
 
 ## Built (filled in after completion)
 
--
+Sun 15 Nov.
+
+- `lib/fraud/process-authorization.ts` → `processAuthorization()`; it
+  imports `./rules`, db, http, audit, money and `createIncident`, never
+  `lib/ai`. `POST /api/simulate/card-authorization` (demo key, Zod body,
+  `toCents`; a bad amount → 400, an unknown card → 404).
+- Incidents carry `measures` (`Payment declined`, `Card temporarily
+  locked`). Titles: "Declined $3,580.00 at Nova Electronics Online" /
+  "Held $X at M".
+- Verified live after a reset: Metro Café $14.50 → approved, no incident or
+  notification. Nova $3,580 → declined / high / `temporarily_locked`; the
+  card is locked, the incident is high + contained, the notification reads
+  "We declined $3,580.00 at Nova Electronics Online. Was this you?", and the
+  balances are unchanged. The retry while locked → declined / critical /
+  `none`. Three quick Metro attempts → the third is `review` with
+  `rapid_repeats`.
+- After an approved café payment the average is $25.23 (16 events), still
+  under the $500 floor.
+- An attempt on an already-locked card also creates its own incident and
+  "Was this you?" notification (spec: every non-approved decision). The demo
+  only sends one attempt.
