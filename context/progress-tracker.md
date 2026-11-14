@@ -7,12 +7,13 @@ Update this file after every meaningful implementation change.
 - Phase A (Foundation) complete: Units 01–08 done. Phase B: Units 09–12 done;
   **Act 1 passes end to end on the public URL.** Units 13–16 done;
   **golden-path steps 1–7 pass online and offline**, and the hijack block is
-  demoable on demand. Unit 17 spec drafted, awaiting clarification.
+  demoable on demand. Unit 17 (fraud rules) done. Unit 18 spec drafted,
+  awaiting clarification.
 
 ## Current Goal
 
 - Answer the "Clarify before building" questions in
-  `context/feature_specs/17-fraud-rules.md`, then build Unit 17.
+  `context/feature_specs/18-card-authorisation.md`, then build Unit 18.
 
 ## Schedule
 
@@ -56,8 +57,8 @@ before it's built. What each unit contains and when it counts as done is in
 - [x] 14 Product reading and shield card (step 6)
 - [x] 15 Purchase flow (steps 5–7)
 - [x] 16 Simulated compromised agent
-- [ ] 17 Fraud rules (pure) — spec drafted
-- [ ] 18 Card authorisation pipeline
+- [x] 17 Fraud rules (pure)
+- [ ] 18 Card authorisation pipeline — spec drafted
 
 **Phase C — Protection and the bank side**
 
@@ -151,6 +152,9 @@ before it's built. What each unit contains and when it counts as done is in
   hijacked $500 call through the real trust engine (always blocked, high
   incident), shown in the customer chat as a labelled Blocked card. See
   `feature_specs/16-compromised-agent.md` → Built.
+- **Unit 17 Fraud rules** (Sun 15 Nov): pure signals and decision matrix
+  with 10 tests. Nova $3,580 → declined + temporarily locked; Metro Café →
+  approved. See `feature_specs/17-fraud-rules.md` → Built.
 
 ## In Progress
 
@@ -158,10 +162,10 @@ before it's built. What each unit contains and when it counts as done is in
 
 ## Next Up
 
-- Developer answers the questions in `17-fraud-rules.md`.
+- Developer answers the questions in `18-card-authorisation.md`.
 - Developer: set Vercel `DEMO_ADMIN_KEY` to the generated production key and
   redeploy (see `12-first-deploy.md` → Built).
-- Build and verify Unit 17, tick it above, then write `18-card-authorisation.md`.
+- Build and verify Unit 18, tick it above, then write `19-was-this-you.md`.
 
 ## Open Questions
 
