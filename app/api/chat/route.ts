@@ -2,6 +2,9 @@ import { z } from "zod";
 import { fail, run } from "@/lib/http";
 import { runAgent, HISTORY_LIMIT } from "@/lib/ai/agent";
 
+// Worst case: 4 model rounds × 12 s timeout + tools. Every other route finishes in about 1 s.
+export const maxDuration = 60;
+
 // ponytail: input caps + 4 tool rounds only, no rate limiter; add one before a wider public launch.
 const Body = z.object({
   messages: z

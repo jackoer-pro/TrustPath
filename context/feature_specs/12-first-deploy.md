@@ -1,6 +1,6 @@
 # 12 — First Vercel deploy
 
-Status: draft
+Status: approved — config merged, awaiting the developer's Vercel import
 
 ## Goal
 
@@ -49,19 +49,18 @@ redeploys automatically, so the public URL always matches `main`.
 
 ## Clarify before building
 
-1. **Vercel account.** Do you have one linked to the GitHub account that owns
-   `jackoer-pro/TrustPath`? Proposed: import through the dashboard (Git
-   integration), so every push to `main` deploys. I can't click through
-   Vercel for you.
-2. **Production `DEMO_ADMIN_KEY`.** Proposed: a **different** key from your
-   local one. I generate it into a scratch file outside the project; you
-   paste it into Vercel and keep it for the demo panel. OK?
-3. **Preview deployments** for each `unit/NN` branch: keep them on (the
-   Vercel default)? They're handy for checking a unit before merging, but
-   they use the same Supabase database. Proposed: keep them on, with env vars
-   set for Preview too.
-4. **The demo PIN stays `1234` in production.** It's a labelled simulated
-   device check, and the judges may want to try it. OK?
+Answered Sat 14 Nov. The developer has a Vercel account and asked for the
+best option on 2–4:
+
+1. **Vercel:** the developer imports `jackoer-pro/TrustPath` through the
+   dashboard (Git integration).
+2. **A separate production `DEMO_ADMIN_KEY`:** generated into the session
+   scratchpad (`production-demo-key.txt`), never committed.
+3. **Preview deployments on**, with env vars for Preview too. Vercel's
+   default Deployment Protection keeps preview URLs behind the owner's
+   Vercel login.
+4. **`DEMO_PIN=1234` in production:** it's a labelled simulated check, and
+   judges can try it.
 
 ## Verify when done
 
