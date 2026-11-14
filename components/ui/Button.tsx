@@ -4,6 +4,7 @@ const variants = {
   primary: "bg-navy text-white hover:bg-navy-strong active:bg-navy-strong",
   secondary: "border border-line bg-surface text-ink hover:bg-sunken",
   ghost: "text-ink hover:bg-sunken",
+  danger: "bg-risk-critical text-white hover:opacity-90 active:opacity-90",
 };
 
 const sizes = {

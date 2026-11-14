@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { formatAUD } from "@/lib/money";
 import type { PreparedAction } from "@/lib/banking/actions";
 import type { CustomerState } from "@/lib/banking/state";
 import { AccountSummary } from "./AccountSummary";
+import { AlertBanner } from "./AlertBanner";
 import { ChatInput } from "./ChatInput";
 import { ChatThread, type ChatMsg } from "./ChatThread";
 import { PinDialog, type ApproveResult } from "./PinDialog";
@@ -14,6 +15,9 @@ import { useCustomerState } from "./useCustomerState";
 
 const HISTORY_LIMIT = 12;
 const OFFLINE_ERROR = "I couldn't reach the bank just now. Please try again.";
+// Local, not LLM (spec 19): instant, identical online and offline, and sent as history with the next turn.
+const DENIED_REPLY = "Thanks for telling us. I've kept your card locked. Did anything else happen, like someone asking for a code?";
+const CONFIRMED_REPLY = "Thanks. Your card stays locked until our team reviews it.";
 
 type Local = { status?: ReceiptStatus; completedAt?: string; note?: string };
 type PolledAction = CustomerState["actions"][number];
@@ -54,6 +58,37 @@ export function HomeScreen() {
   const [pending, setPending] = useState(false);
   const [local, setLocal] = useState<Record<string, Local>>({});
   const [pinFor, setPinFor] = useState<PreparedAction | null>(null);
+  const [answered, setAnswered] = useState<string[]>([]);
+  const [alertBusy, setAlertBusy] = useState(false);
+  const [alertError, setAlertError] = useState<string>();
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Newest unanswered card alert; hidden optimistically once answered (the next poll confirms).
+  const alert = state?.notifications.find((n) => n.kind === "card_alert" && !answered.includes(n.id));
+
+  async function answer(response: "confirmed" | "denied") {
+    if (!alert) return;
+    setAlertBusy(true);
+    setAlertError(undefined);
+    const body = await fetch(`/api/notifications/${alert.id}/respond`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ response }),
+    })
+      .then((r) => r.json())
+      .catch(() => null);
+    setAlertBusy(false);
+    // ALREADY_ANSWERED means another tab answered it: hide it too.
+    if (!body?.ok && body?.error?.code !== "ALREADY_ANSWERED") {
+      setAlertError(body?.error?.message ?? OFFLINE_ERROR);
+      return;
+    }
+    setAnswered((a) => [...a, alert.id]);
+    if (!body.ok) return;
+    const content = response === "denied" ? DENIED_REPLY : CONFIRMED_REPLY;
+    setMessages((m) => [...m, { id: crypto.randomUUID(), role: "assistant", content, at: new Date().toISOString() }]);
+    if (response === "denied") inputRef.current?.focus();
+  }
 
   const patch = (id: string, l: Local) => setLocal((prev) => ({ ...prev, [id]: { ...prev[id], ...l } }));
 
@@ -120,6 +155,7 @@ export function HomeScreen() {
   return (
     <>
       <div className="shrink-0 pb-4">
+        {alert && <AlertBanner title={alert.title} body={alert.body} busy={alertBusy} error={alertError} onAnswer={answer} />}
         {error && !state ? (
           <p className="px-4 text-sm text-muted">Can&apos;t load your accounts right now.</p>
         ) : (
@@ -147,7 +183,7 @@ export function HomeScreen() {
             )
           }
         />
-        <ChatInput disabled={pending} onSend={send} />
+        <ChatInput disabled={pending} onSend={send} inputRef={inputRef} />
       </section>
 
       <PinDialog

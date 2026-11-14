@@ -1,6 +1,6 @@
 # 19 — "Was this you?" alert
 
-Status: draft
+Status: done
 
 ## Goal
 
@@ -65,35 +65,49 @@ raises the incident, and opens the chat with that context, ready for step
 
 ## Clarify before building
 
-1. **Denied on a "review" payment** (card still `active`): lock the card too,
-   since Alex just said it wasn't them. OK?
-2. **The "customer confirmed" note** goes in the incident's `measures` list
-   (there's no notes column, and no migration needed). OK?
-3. **Banner on Home only** for now (Home owns the polling hook); other tabs
-   get it when the Protect tab is built. OK?
-4. **The follow-up chat message is local, not from the LLM**, so it's
-   instant, identical online and offline, and still sent as history so the
-   model sees it in step 12. OK?
+Answered by the developer, Sun 15 Nov: all four proposals accepted.
+
+1. Denied on a held ("review") payment locks the card too.
+2. "Customer confirmed" goes in the incident's `measures` list.
+3. Banner on Home only for now.
+4. The follow-up chat message is local, not from the LLM, and is sent as
+   history.
 
 ## Verify when done
 
 After a reset:
 
-- [ ] Inject Nova $3,580 via the API → the banner appears on Home within
+- [x] Inject Nova $3,580 via the API → the banner appears on Home within
       2 s with the declined copy.
-- [ ] "No, it wasn't me" → the banner goes, the card is `locked`, the
+- [x] "No, it wasn't me" → the banner goes, the card is `locked`, the
       incident is high with the new measures, the notification is `denied`,
       and the chat shows the follow-up message with the input focused.
-- [ ] Answering twice → 409. Unknown id → 404. Bad body → 400.
-- [ ] "Yes, it was me" (fresh reset + inject) → the card stays
+- [x] Answering twice → 409. Unknown id → 404. Bad body → 400.
+- [x] "Yes, it was me" (fresh reset + inject) → the card stays
       `temporarily_locked`, the incident gets "Customer confirmed the
       payment".
-- [ ] A "review" payment + denied → the card goes `active` → `locked`.
-- [ ] Keyboard and screen reader: the banner is `role="alert"`, buttons are
+- [x] A "review" payment + denied → the card goes `active` → `locked`.
+- [x] Keyboard and screen reader: the banner is `role="alert"`, buttons are
       reachable by Tab.
-- [ ] `npm test`, `npm run build` and `npm run lint` pass. Deployed and
+- [x] `npm test`, `npm run build` and `npm run lint` pass. Deployed and
       checked on the public URL.
 
 ## Built (filled in after completion)
 
--
+Sun 15 Nov.
+
+- `lib/protect/respond.ts` → `respondToNotification()`; the answer is a
+  conditional update (`response is null`), so a second answer or a race →
+  409. `POST /api/notifications/[id]/respond`.
+- `AlertBanner` (risk-high colours, `TriangleAlert`, `role="alert"`) sits
+  under the app bar on Home; a new `danger` variant on `Button` for "No, it
+  wasn't me". `ChatInput` takes an `inputRef` so Home can focus it.
+- Measures on the card incident: "Customer said it wasn't them" + "Card
+  locked", or "Customer confirmed the payment". Unit 18's review measure now
+  reads "Payment held for review".
+- Verified with headless Chrome against a production build: the banner
+  appears in about 1 s, deny → the banner goes (and stays gone after the
+  next poll), the follow-up message shows, the input is focused, the card is
+  `locked`, and the incident is high with all four measures. API: 400 / 404
+  / 200 / 409; confirmed keeps `temporarily_locked`; review + denied →
+  `active` → `locked`. No console errors.

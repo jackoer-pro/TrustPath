@@ -8,12 +8,13 @@ Update this file after every meaningful implementation change.
   **Act 1 passes end to end on the public URL.** Units 13–16 done;
   **golden-path steps 1–7 pass online and offline**, and the hijack block is
   demoable on demand. Units 17–18 done; **golden-path step 10 works
-  through the API.** Unit 19 spec drafted, awaiting clarification.
+  through the API.** Phase C: Unit 19 done (alert and deny on screen). Unit 20
+  spec drafted, awaiting clarification.
 
 ## Current Goal
 
 - Answer the "Clarify before building" questions in
-  `context/feature_specs/19-was-this-you.md`, then build Unit 19.
+  `context/feature_specs/20-emergency-protection.md`, then build Unit 20.
 
 ## Schedule
 
@@ -62,8 +63,8 @@ before it's built. What each unit contains and when it counts as done is in
 
 **Phase C — Protection and the bank side**
 
-- [ ] 19 "Was this you?" alert (steps 10–12) — spec drafted
-- [ ] 20 Emergency protection (steps 12–13, 16)
+- [x] 19 "Was this you?" alert (steps 10–12)
+- [ ] 20 Emergency protection (steps 12–13, 16) — spec drafted
 - [ ] 21 Safety knowledge base (step 14)
 - [ ] 22 Protect tab (step 15)
 - [ ] 23 Bank console lists (steps 8, 11)
@@ -160,6 +161,11 @@ before it's built. What each unit contains and when it counts as done is in
   incident, "Was this you?" notification and `fraud_engine` audit rows, with
   no AI. **Golden-path step 10 works through the API.** See
   `feature_specs/18-card-authorisation.md` → Built.
+- **Unit 19 "Was this you?" alert** (Sun 15 Nov): `AlertBanner` on Home
+  within about 1 s of the attempt; `POST /api/notifications/[id]/respond`;
+  "No, it wasn't me" locks the card, raises the incident and opens the chat
+  with the follow-up question. **Golden-path steps 10–12 (first half) work
+  on screen.** See `feature_specs/19-was-this-you.md` → Built.
 
 ## In Progress
 
@@ -167,10 +173,10 @@ before it's built. What each unit contains and when it counts as done is in
 
 ## Next Up
 
-- Developer answers the questions in `19-was-this-you.md`.
+- Developer answers the questions in `20-emergency-protection.md`.
 - Developer: set Vercel `DEMO_ADMIN_KEY` to the generated production key and
   redeploy (see `12-first-deploy.md` → Built).
-- Build and verify Unit 19, tick it above, then write `20-emergency-protection.md`.
+- Build and verify Unit 20, tick it above, then write `21-safety-knowledge.md`.
 
 ## Open Questions
 
