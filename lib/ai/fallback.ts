@@ -44,6 +44,7 @@ export async function runFallback(history: ChatMessage[]): Promise<AgentResult> 
   const parsed = parseIntents(history, await knownRecipients());
   const ctx = { userMessages: history.filter((m) => m.role === "user").map((m) => m.content) };
   const sentences: string[] = [];
+  const reads: string[] = [];
   const cards: ChatCard[] = [];
   const actions: PreparedAction[] = [];
   let left = "";
@@ -60,7 +61,7 @@ export async function runFallback(history: ChatMessage[]): Promise<AgentResult> 
       sentences.push(`Your latest transactions: ${list(tx.slice(0, 3).map((t) => `${t.description} ${t.amount}`))}.`);
     } else if (call.name === "view_product") {
       const p = r.forModel as ProductOut;
-      sentences.push(`I read the ${p.merchant} page for the ${p.name} (${p.price}).${p.notice ? " It contained hidden instructions, which I ignored." : ""}`);
+      reads.push(`I read the ${p.merchant} page for the ${p.name} (${p.price}).${p.notice ? " It contained hidden instructions, which I ignored." : ""}`);
       if (r.card) cards.push(r.card);
     } else if (r.card?.type === "receipt") {
       cards.push(r.card);
@@ -69,10 +70,11 @@ export async function runFallback(history: ChatMessage[]): Promise<AgentResult> 
     }
   }
 
-  const fmt = (c: PreparedAction) => `${formatAUD(c.amountCents)} to ${c.toName}`;
+  const fmt = (c: PreparedAction) => `${formatAUD(c.amountCents)} ${c.type === "purchase" ? "at" : "to"} ${c.toName}`;
   const pending = actions.filter((c) => c.status === "pending_approval");
+  sentences.unshift(...reads);
   if (pending.length)
-    sentences.unshift(
+    sentences.push(
       `I've prepared ${pending.length === 1 ? "1 action" : `${pending.length} actions`}: ${list(pending.map(fmt))}.` +
         (left ? ` You'll have ${left.replace(" in ", " left in ")}.` : ""),
     );
