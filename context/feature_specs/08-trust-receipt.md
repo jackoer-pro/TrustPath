@@ -1,6 +1,6 @@
 # 08 — Trust Receipt and PIN dialog
 
-Status: draft
+Status: done
 
 ## Goal
 
@@ -76,39 +76,53 @@ triggered by a temporary dev panel until the chat exists.
 
 ## Clarify before building
 
-1. **Dev panel on Home** with 3 preset buttons, visible only in `next dev`.
-   OK?
-2. **"Why it can proceed" sentence**, built from the checks. Examples:
-   "You asked for this, Goal Saver is your own account, and the money is
-   there." / "You asked for this, BrightSpark Energy is a saved, verified
-   biller, and the money is there." OK?
-3. **Expiry line:** a fixed "expires at 2:24 pm" rather than a live
-   countdown. It's simpler and reads fine on camera. OK?
-4. **After approval:** apply the returned balances instantly; the next poll
-   confirms them. OK?
+Answered by the developer, Sat 14 Nov: all four proposals accepted.
+
+1. Dev panel on Home with 3 preset buttons, only in `next dev`.
+2. The "why it can proceed" sentence is built from the checks.
+3. A fixed "expires at 2:24 pm" line, not a countdown.
+4. The returned balances are applied instantly after approval.
 
 ## Verify when done
 
 In `next dev`, after a reset:
 
-- [ ] "Act 1: $300 → savings" shows a low-risk receipt with three teal
+- [x] "Act 1: $300 → savings" shows a low-risk receipt with three teal
       checks and the why sentence. Approve with `1234`, and the receipt
       collapses to "✓ $300.00 to Goal Saver · Completed …". Balances show
       $1,200.00 / $4,500.00 **immediately**.
-- [ ] "$120 → electricity" + approve → Everyday $1,080.00 (golden-path
+- [x] "$120 → electricity" + approve → Everyday $1,080.00 (golden-path
       numbers).
-- [ ] The hijack button shows a red "Blocked" receipt with "This instruction
+- [x] The hijack button shows a red "Blocked" receipt with "This instruction
       didn't come from you." and no buttons.
-- [ ] A wrong PIN shows the inline error and the receipt stays pending; the
+- [x] A wrong PIN shows the inline error and the receipt stays pending; the
       3rd wrong PIN closes the dialog and the receipt shows cancelled.
-- [ ] Cancel on a receipt → muted "Cancelled" line.
-- [ ] Keyboard only: Tab reaches Approve, Enter opens the dialog with focus
+- [x] Cancel on a receipt → muted "Cancelled" line.
+- [x] Keyboard only: Tab reaches Approve, Enter opens the dialog with focus
       in the PIN field, Esc closes it and focus returns to Approve.
-- [ ] At 390px everything fits with no horizontal scroll. Screenshot each
+- [x] At 390px everything fits with no horizontal scroll. Screenshot each
       receipt state.
-- [ ] `next build` + `next start`: no dev panel rendered.
-- [ ] `npm test`, `npm run build` and `npm run lint` pass. No console errors.
+- [x] `next build` + `next start`: no dev panel rendered.
+- [x] `npm test`, `npm run build` and `npm run lint` pass. No console errors.
 
 ## Built (filled in after completion)
 
--
+Sat 14 Nov.
+
+- `components/ui/Dialog.tsx`, `TrustReceipt`, `PinDialog`, `DevPanel`
+  (temporary), `useCustomerState().setBalances`, and an `animate-rise`
+  token (fade + 8px rise, 200 ms) in `globals.css`.
+- **Receipt status** = local outcome (instant) → polled DB status (expiry,
+  cancellation) → prepared status. No effect syncing is needed.
+- **Dialog focus:** React's `autoFocus` fires before `showModal()`, so
+  `Dialog` focuses the first `[data-autofocus]` element after opening. The
+  browser handles the focus trap, Esc and focus return.
+- **Why sentence** wording: own account → "X is your own account"; biller →
+  "X is a saved biller"; person → "X is a saved payee".
+- Verified with headless Chrome (CDP) at 390px against live Supabase in
+  `next dev`: all checks pass, including the golden-path numbers ($1,080.00 /
+  $4,500.00), 3-strike cancel, keyboard-only flow, no horizontal scroll, and
+  no console errors or warnings. Production build: no dev panel in the HTML
+  or JS, and the dev route returns 404.
+- **Carried to Unit 11:** the chat thread should auto-scroll to the newest
+  card.

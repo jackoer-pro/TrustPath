@@ -27,6 +27,14 @@
   --color-risk-critical: #a1120d;
   --color-risk-critical-bg: #fde7e6;
   --color-focus: #1d6fd8;
+
+  --animate-rise: rise 200ms ease-out;
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+  }
 }
 
 :focus-visible {

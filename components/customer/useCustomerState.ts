@@ -38,5 +38,17 @@ export function useCustomerState() {
     };
   }, []);
 
-  return { state, error };
+  /** Apply balances returned by an approval immediately; the next poll confirms them. */
+  const setBalances = (balances: { id: string; balanceCents: number }[]) =>
+    setState((prev) =>
+      prev && {
+        ...prev,
+        accounts: prev.accounts.map((a) => ({
+          ...a,
+          balanceCents: balances.find((b) => b.id === a.id)?.balanceCents ?? a.balanceCents,
+        })),
+      },
+    );
+
+  return { state, error, setBalances };
 }

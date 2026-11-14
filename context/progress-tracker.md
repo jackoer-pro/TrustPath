@@ -4,13 +4,13 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
-- Phase A (Foundation). Units 01–07 done. Unit 08 spec drafted, awaiting
-  clarification.
+- Phase A (Foundation) complete: Units 01–08 done. Phase B starts with the
+  Unit 09 spec, awaiting clarification.
 
 ## Current Goal
 
 - Answer the "Clarify before building" questions in
-  `context/feature_specs/08-trust-receipt.md`, then build Unit 08.
+  `context/feature_specs/09-agent-loop.md`, then build Unit 09.
 
 ## Schedule
 
@@ -42,11 +42,11 @@ before it's built. What each unit contains and when it counts as done is in
 - [x] 05 Trust engine (pure)
 - [x] 06 Prepare transfer service
 - [x] 07 Approve and cancel routes
-- [ ] 08 Trust Receipt and PIN dialog — spec drafted
+- [x] 08 Trust Receipt and PIN dialog
 
 **Phase B — The assistant**
 
-- [ ] 09 DeepSeek client and agent loop
+- [ ] 09 DeepSeek client and agent loop — spec drafted
 - [ ] 10 Offline fallback parser
 - [ ] 11 Chat UI (Act 1 done)
 - [ ] 12 First Vercel deploy
@@ -113,6 +113,11 @@ before it's built. What each unit contains and when it counts as done is in
   atomic `complete_action()`. Replay, altered hash, expiry, held/blocked and
   insufficient funds are all rejected, verified live. See
   `feature_specs/07-approve-cancel.md` → Built.
+- **Unit 08 Trust Receipt and PIN dialog** (Sat 14 Nov): `TrustReceipt` (all
+  states), `PinDialog` on native `<dialog>`, instant balances after approval,
+  and the temporary dev panel. **Golden-path steps 3–4 work on screen**
+  (triggered by the dev panel). See `feature_specs/08-trust-receipt.md` →
+  Built.
 
 ## In Progress
 
@@ -120,8 +125,9 @@ before it's built. What each unit contains and when it counts as done is in
 
 ## Next Up
 
-- Developer answers the questions in `08-trust-receipt.md`.
-- Build and verify Unit 08, tick it above, then write `09-agent-loop.md`.
+- Developer answers the questions in `09-agent-loop.md` (including the
+  DeepSeek key and model id).
+- Build and verify Unit 09, tick it above, then write `10-fallback-parser.md`.
 
 ## Open Questions
 
