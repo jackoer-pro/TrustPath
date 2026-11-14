@@ -1,6 +1,6 @@
 # 17 — Fraud rules (pure)
 
-Status: draft
+Status: done
 
 ## Goal
 
@@ -65,27 +65,35 @@ declined and the card temporarily locked) and the $14.50 Metro Café approval.
 
 ## Clarify before building
 
-1. **Rapid repeats counts the current attempt** (two earlier attempts within
-   10 minutes plus this one = 3 → high). OK?
-2. **Reasons are written for bank staff, with numbers.** The customer alert
-   in Unit 19 uses its own plain wording ("We declined $3,580.00 at Nova
-   Electronics Online. Was this you?"). OK?
-3. **The average uses only approved history** (declined attempts don't
-   inflate it), and with no history the $500 floor applies. OK?
-4. **Merchant matching is exact but case-insensitive** ("metro café" =
-   "Metro Café"), with no fuzzy matching. OK?
+Answered by the developer, Sun 15 Nov: all four proposals accepted.
+
+1. Rapid repeats counts the current attempt (`recentAttempts + 1 ≥ 3`).
+2. Reasons are written for bank staff, with numbers.
+3. The average uses approved history only, with a $500 floor.
+4. Merchant matching is exact and case-insensitive.
 
 ## Verify when done
 
-- [ ] `npm test` passes with a test for each matrix row and each signal.
-- [ ] The golden-path seed history (15 events, $8.50–$85.00) gives Nova
+- [x] `npm test` passes with a test for each matrix row and each signal.
+- [x] The golden-path seed history (15 events, $8.50–$85.00) gives Nova
       $3,580 → `declined` / `temporarily_locked` / high, with reasons
       `unusual_amount`, `new_merchant` and `card_not_present`.
-- [ ] Metro Café $14.50 in store → `approved`, low, no signals.
-- [ ] `lib/fraud/rules.ts` imports nothing from `lib/ai`, `next`,
+- [x] Metro Café $14.50 in store → `approved`, low, no signals.
+- [x] `lib/fraud/rules.ts` imports nothing from `lib/ai`, `next`,
       `@supabase` or `@/`.
-- [ ] `npm run build` and `npm run lint` pass.
+- [x] `npm run build` and `npm run lint` pass.
 
 ## Built (filled in after completion)
 
--
+Sun 15 Nov.
+
+- `lib/fraud/rules.ts` → `assessCardAttempt()` and 10 tests (53 total). It
+  imports only `../money.ts` (for amounts in staff reasons).
+- Seed history average = **$25.95**, so 10× = $259.47 and the **$500 floor**
+  sets the threshold. Nova $3,580 online → `declined` /
+  `temporarily_locked` / high with `unusual_amount`, `new_merchant` and
+  `card_not_present`. Metro Café $14.50 in store → `approved`, low, no
+  signals.
+- Thresholds are exported constants (`UNUSUAL_MULTIPLIER`,
+  `UNUSUAL_FLOOR_CENTS`, `RAPID_REPEAT_COUNT`). `lib/fraud/rules.ts` is
+  security-sensitive (`ai-workflow-rules.md`).
