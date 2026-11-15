@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { House, ShieldCheck } from "lucide-react";
+import { House, ShieldCheck, ShoppingBag } from "lucide-react";
 
 const tabs = [
   { href: "/", label: "Home", Icon: House },
+  { href: "/store", label: "Shop", Icon: ShoppingBag },
   { href: "/protect", label: "Protect", Icon: ShieldCheck },
 ] as const;
 

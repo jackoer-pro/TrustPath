@@ -103,3 +103,17 @@ test("CoachGuard: a pasted coaching message is only checked, never acted on or t
 test("initials stay with the name: 'Send $400 to D. Mercer'", () => {
   assert.deepEqual(parse(u("Send $400 to D. Mercer")).calls, [{ name: "prepare_transfer", args: { to: "d mercer", amount: "400" } }]);
 });
+
+test("in-app shop: deal requests go to the deal finder; shop links and money requests are unchanged", () => {
+  assert.deepEqual(parse(u("Find me the best noise cancelling headphones under $150")).calls, [
+    { name: "find_deals", args: { query: "Find me the best noise cancelling headphones under $150" } },
+  ]);
+  assert.equal(parse(u("Buy these headphones for $129 https://x.app/shop/aurora-anc")).calls[0].name, "view_product");
+  assert.equal(parse(u("Send $200 to Mum.")).calls[0].name, "prepare_transfer");
+});
+
+test("in-app shop: buying a named product prepares it; 'any good X' finds deals", () => {
+  assert.deepEqual(parse(u("Buy the QuietPro 700 Headphones")).calls, [{ name: "buy_named_product", args: { productIdOrUrl: "quietpro 700 headphones" } }]);
+  assert.equal(parse(u("Any good headphones under $100?")).calls[0].name, "find_deals");
+  assert.equal(parse(u("Buy some headphones")).calls[0].name, "find_deals", "not a product name → deal finder");
+});

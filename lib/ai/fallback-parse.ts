@@ -2,6 +2,8 @@
 // It only proposes tool calls; every call still goes through runTool() → Zod → prepareTransfer → trust engine.
 import { normaliseMessages } from "../trust/provenance.ts";
 import { looksPasted } from "./paste.ts";
+import { categoryOf } from "../shop/deals.ts";
+import { getProduct } from "../shop/products.ts";
 
 export type Known = { alias: string; display: string }; // e.g. { alias: "mum", display: "Mum" }
 export type Call =
@@ -12,7 +14,9 @@ export type Call =
   | { name: "prepare_transfer"; args: { to: string; amount: string; fromAccount?: string } }
   | { name: "report_account_compromise"; args: { customerStatement: string } }
   | { name: "search_safety_guide"; args: { query: string } }
-  | { name: "check_message_for_scam_coaching"; args: Record<string, never> };
+  | { name: "check_message_for_scam_coaching"; args: Record<string, never> }
+  | { name: "find_deals"; args: { query: string } }
+  | { name: "buy_named_product"; args: { productIdOrUrl: string } };
 export type ParseResult = { calls: Call[]; asks: string[]; wantsLeft: boolean };
 type Msg = { role: "user" | "assistant"; content: string };
 
@@ -99,6 +103,17 @@ export function parseIntents(history: Msg[], known: Known[]): ParseResult {
   }
 
   const shopLink = /\S*\/shop\/[a-z0-9-]+/.exec(text)?.[0];
+  // In-app shop: "find me the best headphones under $150" → the deal finder (no link needed).
+  // "Buy the QuietPro 700 Headphones": a named catalogue product → prepare it (the name is in the customer's words).
+  const named = !shopLink && /\bbuy\s+(?:the\s+|a\s+|an\s+)?(.+?)[.!?]*$/.exec(text)?.[1];
+  if (named && getProduct(named)) {
+    out.calls.push({ name: "buy_named_product", args: { productIdOrUrl: named } });
+    return out;
+  }
+  if (!shopLink && categoryOf(text) && /\b(find|search|looking for|best|cheapest|cheap|deal|deals|recommend|buy|need|want|good|any|options|which|show)\b/.test(text)) {
+    out.calls.push({ name: "find_deals", args: { query: last.content.trim().slice(0, 200) } });
+    return out;
+  }
   if (shopLink) {
     out.calls.push({ name: "view_product", args: { productIdOrUrl: shopLink } });
     if (/\b(buy|order|purchase|get me)\b/.test(text)) out.calls.push({ name: "prepare_purchase", args: { productIdOrUrl: shopLink } });

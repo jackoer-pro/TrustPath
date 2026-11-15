@@ -159,6 +159,9 @@ centred inside a phone frame on the canvas background.
 - The empty chat shows 4 suggestion chips: "Show my balance", "Pay a bill",
   "Move money to savings" and "I think I've been scammed".
 - `AlertBanner` slides down under the app bar and stays until it's answered.
+- The Shop tab (`/store`, Unit 29) lists catalogue products with simulated
+  seller ratings, "Best overall" / "Not recommended" badges from the deal
+  finder, and Buy → Trust Receipt → PIN in place.
 - The Protect tab shows:
   - a `SecurityStatus` hero: teal "Protected" or critical "Emergency
     protection on"

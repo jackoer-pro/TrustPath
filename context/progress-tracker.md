@@ -10,8 +10,8 @@ Update this file after every meaningful implementation change.
   demoable on demand. Units 17–18 done; **golden-path step 10 works
   through the API.** Phases A–D complete: Units 01–27 done. **The whole golden
   path runs from `/demo`, and all 15 evaluation cases pass online and
-  offline** (`npm run eval`). Unit 28 (CoachGuard) done; Unit 29 (in-app shop and
-  deal finder) in progress.
+  offline** (`npm run eval`). Units 28 (CoachGuard) and 29 (in-app shop and deal
+  finder) done: every planned unit is built.
 
 ## Current Goal
 
@@ -82,7 +82,7 @@ before it's built. What each unit contains and when it counts as done is in
 **Stretch (only if 27 is done)**
 
 - [x] 28 CoachGuard (scam-coaching detector; replaces the old 28 + 29)
-- [ ] 29 In-app shop and deal finder — in progress
+- [x] 29 In-app shop and deal finder
 
 ## Completed
 
@@ -215,6 +215,10 @@ before it's built. What each unit contains and when it counts as done is in
   payments to new payees; pasted text is never the customer's words.
   Migration 0002 (run by the developer). `npm run eval` 24/24 online and
   offline. See `feature_specs/28-coachguard.md`.
+- **Unit 29 In-app shop and deal finder** (Sun 15 Nov): Shop tab and a
+  `find_deals` assistant tool ranking simulated merchants by reliability then
+  price (risky sellers never recommended); Buy → Trust Receipt → PIN.
+  `npm run eval` 29/29 online and offline. See `feature_specs/29-shop-deals.md`.
 
 ## In Progress
 

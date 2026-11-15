@@ -11,6 +11,7 @@ import { activate } from "@/lib/protect/emergency";
 import { analyseMessage, type CoachingResult } from "@/lib/protect/coaching/analyse";
 import type { ToolDef } from "./deepseek";
 import { readProduct } from "./product-view";
+import { findDeals, type DealResult } from "@/lib/shop/deals";
 import { searchSafety } from "./knowledge";
 import { scan } from "@/lib/trust/content-scanner";
 
@@ -30,7 +31,14 @@ export type ShieldCardData = { type: "shield"; id: string; merchant: string; sou
 export type EmergencyCardData = { type: "emergency"; incidentId: string; measures: { label: string; done: boolean }[] };
 export type SourcesCardData = { type: "sources"; items: string[] };
 export type CoachingCardData = { type: "coaching" } & CoachingResult;
-export type ChatCard = { type: "receipt"; action: PreparedAction } | ShieldCardData | EmergencyCardData | SourcesCardData | CoachingCardData;
+export type DealsCardData = { type: "deals"; query: string } & DealResult;
+export type ChatCard =
+  | { type: "receipt"; action: PreparedAction }
+  | ShieldCardData
+  | EmergencyCardData
+  | SourcesCardData
+  | CoachingCardData
+  | DealsCardData;
 
 /** Per chat turn. `injectionReported` keeps it to one incident + one shield card per turn. */
 export type ToolContext = {
@@ -369,6 +377,43 @@ const checkMessage = tool({
   },
 });
 
+const findDealsTool = tool({
+  def: {
+    type: "function",
+    function: {
+      name: "find_deals",
+      description:
+        "Find the best deal in the TrustPath shop (headphones, earbuds, kettles). Ranking is done by the bank's rules: seller reliability first, then price. Returns up to 3 picks with reasons. Never rank or price products yourself.",
+      parameters: {
+        type: "object",
+        properties: {
+          query: { type: "string", description: 'What Alex wants, in their words, e.g. "noise cancelling headphones".' },
+          maxPrice: { type: "string", description: 'Budget in AUD if Alex gave one, e.g. "150".' },
+        },
+        required: ["query"],
+      },
+    },
+  },
+  args: z.object({ query: z.string().trim().min(1).max(200), maxPrice: z.union([z.string().trim().max(20), z.number().positive()]).optional() }),
+  async run({ query, maxPrice }) {
+    let budget: number | null | undefined;
+    try {
+      budget = maxPrice === undefined ? undefined : toCents(maxPrice);
+    } catch {
+      budget = undefined;
+    }
+    const r = findDeals(query, budget);
+    return {
+      ...(r.picks.length > 0 && { card: { type: "deals", query, ...r } }),
+      forModel: {
+        picks: r.picks.map((p) => ({ badge: p.badge, product: p.name, merchant: p.merchant, price: formatAUD(p.priceCents), why: p.why })),
+        note: r.note,
+        howToBuy: "Alex taps Buy on the card (or names the product). Every purchase still needs a Trust Receipt and PIN. Don't prepare a purchase unless Alex asks.",
+      },
+    };
+  },
+});
+
 const TOOLS = [
   getAccounts,
   getRecentTransactions,
@@ -379,6 +424,7 @@ const TOOLS = [
   reportAccountCompromise,
   searchSafetyGuide,
   checkMessage,
+  findDealsTool,
 ];
 export const TOOL_DEFS: ToolDef[] = TOOLS.map((t) => t.def);
 

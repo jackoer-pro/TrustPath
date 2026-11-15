@@ -56,7 +56,8 @@ export async function runFallback(history: ChatMessage[]): Promise<AgentResult> 
   let left = "";
 
   for (const call of parsed.calls) {
-    const r = await runTool(call.name, JSON.stringify(call.args), ctx);
+    const tool = call.name === "buy_named_product" ? "prepare_purchase" : call.name;
+    const r = await runTool(tool, JSON.stringify(call.args), ctx);
     const out = r.forModel as Partial<ErrorOut>;
     if (out.error) sentences.push(out.error);
     else if (call.name === "get_accounts") {
@@ -68,6 +69,12 @@ export async function runFallback(history: ChatMessage[]): Promise<AgentResult> 
     } else if (call.name === "view_product") {
       const p = r.forModel as ProductOut;
       reads.push(`I read the ${p.merchant} page for the ${p.name} (${p.price}).${p.notice ? " The page also had hidden instructions; I ignored them." : ""}`);
+      if (r.card) cards.push(r.card);
+    } else if (call.name === "find_deals") {
+      const d = r.forModel as { picks: { badge: string; product: string; merchant: string; price: string; why: string }[]; note: string | null };
+      const top = d.picks.find((p) => p.badge !== "Not recommended");
+      if (d.note) sentences.push(d.note);
+      if (top) sentences.push(`Best overall: the ${top.product} from ${top.merchant} at ${top.price}. ${top.why} Tap Buy to prepare it.`);
       if (r.card) cards.push(r.card);
     } else if (call.name === "check_message_for_scam_coaching") {
       const c = r.forModel as { explanation: string; nextAction: string; paymentsHeld: { amount: string; to: string }[] };
