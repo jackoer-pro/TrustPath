@@ -1,5 +1,6 @@
 import { CircleCheck, ShieldAlert } from "lucide-react";
 import type { EmergencyCardData } from "@/lib/ai/tools";
+import { caseNumber } from "@/lib/case-number";
 
 /** Ticked list of emergency measures (ui-context.md → EmergencyCard). */
 export function EmergencyCard({ card }: { card: EmergencyCardData }) {
@@ -20,7 +21,9 @@ export function EmergencyCard({ card }: { card: EmergencyCardData }) {
           </li>
         ))}
       </ul>
-      <p className="mt-3 text-sm text-muted">Only our team can lift these. We&apos;ll contact you.</p>
+      <p className="mt-3 text-sm text-muted">
+        Case {caseNumber(card.incidentId)}. Only our team can lift these. We&apos;ll contact you.
+      </p>
     </article>
   );
 }

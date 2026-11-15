@@ -1,6 +1,6 @@
 # 22 — Protect tab
 
-Status: draft
+Status: done
 
 ## Goal
 
@@ -54,31 +54,40 @@ active restrictions and the open cases. **Golden-path step 15 works.**
 
 ## Clarify before building
 
-1. **The alert on Protect is a link to Home**, not a second banner, because
-   answering it adds the follow-up message to the Home chat. OK?
-2. **Show all three incident types** to Alex, including "Hidden
-   instructions blocked", so the protections are visible. OK?
-3. **No unlock button anywhere for the customer**; locked cards say "Only
-   our team can unlock it". OK?
-4. **Case numbers** are `#` + the first 6 characters of the incident id
-   (e.g. `#3F9A1C`), also shown on the Emergency card. OK?
+Answered by the developer, Sun 15 Nov: all four proposals accepted.
+
+1. The alert on Protect is a link to Home.
+2. All three incident types are shown.
+3. No customer unlock button anywhere.
+4. Case numbers `#` + the first 6 id characters, also on the Emergency card.
 
 ## Verify when done
 
-- [ ] After a reset: "Protected", card Active, no restrictions, "No open
+- [x] After a reset: "Protected", card Active, no restrictions, "No open
       cases".
-- [ ] After Nova (step 10): "Card locked" hero, card "Temporarily locked",
+- [x] After Nova (step 10): "Card locked" hero, card "Temporarily locked",
       the alert row, 1 case "Declined $3,580.00 at Nova Electronics Online"
       contained.
-- [ ] After steps 12–13: "Emergency protection on" with the time, card
+- [x] After steps 12–13: "Emergency protection on" with the time, card
       "Locked", both restrictions, 2 cases (account protection + Nova), the
       case number matches the Emergency card's.
-- [ ] Updates within 2 s while the tab is open (no reload).
-- [ ] Phone width 390 px: no horizontal scroll; screen reader labels on
+- [x] Updates within 2 s while the tab is open (no reload).
+- [x] Phone width 390 px: no horizontal scroll; screen reader labels on
       status icons.
-- [ ] `npm test`, `npm run build` and `npm run lint` pass. Deployed and
+- [x] `npm test`, `npm run build` and `npm run lint` pass. Deployed and
       checked on the public URL.
 
 ## Built (filled in after completion)
 
--
+Sun 15 Nov.
+
+- `components/customer/ProtectView.tsx` (client, `useCustomerState`),
+  `SecurityStatus.tsx`, `lib/case-number.ts` (`caseNumber()`, shared with
+  `EmergencyCard`, which now ends "Case #XXXXXX. Only our team can lift
+  these."). `app/(customer)/protect/page.tsx` just renders `ProtectView`.
+- Verified in headless Chrome at 390 px with the page open the whole time:
+  reset → Protected / Active / no cases; Nova → "Card locked" hero in about
+  0.7 s, the alert row, Temporarily locked, 1 contained case; deny + step 13
+  → "Emergency protection on, since 1:41 pm", Locked, both restrictions, 2
+  cases; the case number matches the Emergency card on Home. No horizontal
+  scroll, no console errors. 60 tests pass.
