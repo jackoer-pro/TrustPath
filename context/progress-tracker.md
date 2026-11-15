@@ -8,14 +8,13 @@ Update this file after every meaningful implementation change.
   **Act 1 passes end to end on the public URL.** Units 13–16 done;
   **golden-path steps 1–7 pass online and offline**, and the hijack block is
   demoable on demand. Units 17–18 done; **golden-path step 10 works
-  through the API.** Phase C: Units 19–21 done; **golden-path steps 10–14
-  and 16 pass online and offline.** Unit 22 spec drafted, awaiting
-  clarification.
+  through the API.** Phase C: Units 19–22 done; **customer-side steps 10–16
+  pass online and offline.** Unit 23 spec drafted, awaiting clarification.
 
 ## Current Goal
 
 - Answer the "Clarify before building" questions in
-  `context/feature_specs/22-protect-tab.md`, then build Unit 22.
+  `context/feature_specs/23-bank-console.md`, then build Unit 23.
 
 ## Schedule
 
@@ -67,8 +66,8 @@ before it's built. What each unit contains and when it counts as done is in
 - [x] 19 "Was this you?" alert (steps 10–12)
 - [x] 20 Emergency protection (steps 12–13, 16)
 - [x] 21 Safety knowledge base (step 14)
-- [ ] 22 Protect tab (step 15) — spec drafted
-- [ ] 23 Bank console lists (steps 8, 11)
+- [x] 22 Protect tab (step 15)
+- [ ] 23 Bank console lists (steps 8, 11) — spec drafted
 - [ ] 24 AI case brief (step 17)
 - [ ] 25 Staff review and resolve (Act 4 done)
 - [ ] 26 Demo harness (step 19)
@@ -178,6 +177,10 @@ before it's built. What each unit contains and when it counts as done is in
   and a sources line. **Step 14 passes online and offline**; "Why was my
   payment blocked?" cites the stored reason. See
   `feature_specs/21-safety-knowledge.md` → Built.
+- **Unit 22 Protect tab** (Sun 15 Nov): live `SecurityStatus` hero, cards
+  with lock state, restrictions, cases with case numbers, and an alert row
+  linking to Home. **Step 15 works.** See `feature_specs/22-protect-tab.md`
+  → Built.
 
 ## In Progress
 
@@ -185,10 +188,10 @@ before it's built. What each unit contains and when it counts as done is in
 
 ## Next Up
 
-- Developer answers the questions in `22-protect-tab.md`.
+- Developer answers the questions in `23-bank-console.md`.
 - Developer: set Vercel `DEMO_ADMIN_KEY` to the generated production key and
   redeploy (see `12-first-deploy.md` → Built).
-- Build and verify Unit 22, tick it above, then write `23-bank-console.md`.
+- Build and verify Unit 23, tick it above, then write `24-case-brief.md`.
 
 ## Open Questions
 
