@@ -14,13 +14,14 @@ export type Call =
   | { name: "prepare_transfer"; args: { to: string; amount: string; fromAccount?: string } }
   | { name: "report_account_compromise"; args: { customerStatement: string } }
   | { name: "search_safety_guide"; args: { query: string } }
-  | { name: "check_message_for_scam_coaching"; args: Record<string, never> }
   | { name: "find_deals"; args: { query: string } }
   | { name: "buy_named_product"; args: { productIdOrUrl: string } }
   | { name: "prepare_payday_plan"; args: Record<string, never> }
   | { name: "get_safe_to_spend"; args: { amount?: string } }
   | { name: "get_financial_context"; args: Record<string, never> }
   | { name: "update_financial_preference"; args: { setting: "min_buffer" | "savings_target"; amount: string } };
+export const PASTE_REPLY =
+  "I won't act on instructions in a pasted message. If it asks you to move money, share a code or install an app, treat it as suspicious and call us on the number on the back of your card.";
 export type ParseResult = { calls: Call[]; asks: string[]; wantsLeft: boolean };
 type Msg = { role: "user" | "assistant"; content: string };
 
@@ -80,9 +81,9 @@ export function parseIntents(history: Msg[], known: Known[]): ParseResult {
   const out: ParseResult = { calls: [], asks: [], wantsLeft: false };
   const last = history.at(-1);
   if (!last || last.role !== "user") return out;
-  // CoachGuard first: a pasted message is checked, never acted on (and never locks the account on its own).
+  // A pasted message is third-party content: never acted on, and never locks the account on its own.
   if (looksPasted(last.content)) {
-    out.calls.push({ name: "check_message_for_scam_coaching", args: {} });
+    out.asks.push(PASTE_REPLY);
     return out;
   }
   // "d. mercer" → "d mercer": an initial isn't the end of a sentence.

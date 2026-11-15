@@ -7,7 +7,7 @@ export type SlideId = "opening" | "closing";
 
 // AFCA Annual Review 2025–26, banking and finance complaints (afca.org.au/annual-review-banking-and-finance-complaints).
 const COMPLAINTS = [
-  { issue: "Scams", count: "6,580", answer: "Hijacked AI blocked · CoachGuard · scam-call recovery" },
+  { issue: "Scams", count: "6,580", answer: "Hijacked AI blocked · card-scam alerts · two-tap recovery" },
   { issue: "Unauthorised transactions", count: "6,038", answer: "Fraud engine · Session Trust · two-tap recovery" },
   { issue: "Service issues", count: "4,315", answer: "Safe-to-spend · plain “Why?” for every decision" },
   { issue: "Failure to follow instructions", count: "3,825", answer: "Trust Receipts bound to your exact words · your AI permissions" },

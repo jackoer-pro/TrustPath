@@ -114,11 +114,6 @@ export async function runFallback(history: ChatMessage[]): Promise<AgentResult> 
       if (d.note) sentences.push(d.note);
       if (top) sentences.push(`Best overall: the ${top.product} from ${top.merchant} at ${top.price}. ${top.why} Tap Buy to prepare it.`);
       if (r.card) cards.push(r.card);
-    } else if (call.name === "check_message_for_scam_coaching") {
-      const c = r.forModel as { explanation: string; nextAction: string; paymentsHeld: { amount: string; to: string }[] };
-      sentences.push(c.explanation, c.nextAction);
-      for (const h of c.paymentsHeld) sentences.push(`I've put your ${h.amount} payment to ${h.to} on hold until our team speaks with you.`);
-      if (r.card) cards.push(r.card);
     } else if (call.name === "search_safety_guide") {
       const s = r.forModel as SafetyOut;
       const emergency = cards.some((c) => c.type === "emergency");

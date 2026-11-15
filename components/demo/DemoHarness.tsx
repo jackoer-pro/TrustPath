@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { saveStaffKey, useStaffKey } from "@/components/ops/staffKey";
 import { Slides, type SlideId } from "./Slides";
+import { speak } from "@/components/customer/speech";
 
 // Filming harness (ui-context.md → Demo harness), target 1920×1080.
 const PHONE_W = 420;
@@ -12,6 +13,7 @@ const SCALE = 1.2; // ≈1032 px tall in a 1080 recording
 
 type Action = { label: string; path: string; body?: object };
 const ACTIONS: Action[] = [
+  { label: "Good morning (briefing)", path: "/api/demo/briefing" },
   { label: "Inject card attempt ($3,580)", path: "/api/simulate/card-authorization", body: { amount: 3580, merchant: "Nova Electronics Online", channel: "ecommerce" } },
   { label: "Inject normal purchase ($14.50)", path: "/api/simulate/card-authorization", body: { amount: "14.50", merchant: "Metro Café", channel: "in_store" } },
   { label: "Simulate compromised agent", path: "/api/demo/compromised-agent" },
@@ -46,6 +48,8 @@ export function DemoHarness() {
       text = `${a.label} → ${res.status} in ${ms} ms\n${JSON.stringify(body, null, 2)}`;
       // The customer chat lives in page memory, so a reset must reload both views.
       if (res.ok && a.path === "/api/demo/reset") setFrames((n) => n + 1);
+      // The phone pane shows the briefing; this page has the click, so it speaks it.
+      if (res.ok && a.path === "/api/demo/briefing") speak(body.data.speech);
     } catch {
       text = `${a.label} → network error`;
     }
