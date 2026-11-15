@@ -10,6 +10,8 @@ import { createIncident } from "@/lib/protect/incidents";
 import { activate } from "@/lib/protect/emergency";
 import type { ToolDef } from "./deepseek";
 import { readProduct } from "./product-view";
+import { searchSafety } from "./knowledge";
+import { scan } from "@/lib/trust/content-scanner";
 
 // The complete tool list (architecture.md → AI Model). Read, prepare and protect only:
 // no tool may approve, execute, unlock or change rules (invariant 1). The one protect
@@ -19,12 +21,17 @@ import { readProduct } from "./product-view";
 export const EMERGENCY_REPLY =
   "You may have shared information that could allow someone to access your account. Let's protect your money first.";
 
+/** Step-14 guidance from docs what-we-wont-ask + report-fraud: the offline reply after protection. */
+export const SAFETY_GUIDANCE =
+  "We'll never ask for your security code, PIN or password. If anyone calls asking for one, hang up and contact us on the number on the back of your card or in the app.";
+
 export type ShieldCardData = { type: "shield"; id: string; merchant: string; source: string; removed: string };
 export type EmergencyCardData = { type: "emergency"; incidentId: string; measures: { label: string; done: boolean }[] };
-export type ChatCard = { type: "receipt"; action: PreparedAction } | ShieldCardData | EmergencyCardData;
+export type SourcesCardData = { type: "sources"; items: string[] };
+export type ChatCard = { type: "receipt"; action: PreparedAction } | ShieldCardData | EmergencyCardData | SourcesCardData;
 
 /** Per chat turn. `injectionReported` keeps it to one incident + one shield card per turn. */
-export type ToolContext = { userMessages: string[]; injectionReported?: boolean };
+export type ToolContext = { userMessages: string[]; injectionReported?: boolean; sourcesShown?: boolean };
 export type ToolResult = { forModel: unknown; card?: ChatCard };
 
 type Tool<S extends z.ZodType> = {
@@ -281,7 +288,50 @@ const reportAccountCompromise = tool({
   },
 });
 
-const TOOLS = [getAccounts, getRecentTransactions, getPayees, prepareTransferTool, viewProduct, preparePurchaseTool, reportAccountCompromise];
+const searchSafetyGuide = tool({
+  def: {
+    type: "function",
+    function: {
+      name: "search_safety_guide",
+      description:
+        "Search the bank's safety guide (scams, what the bank never asks for, cards, why payments are held or blocked, reporting fraud). Also returns Alex's latest blocked or held payment with its stored reasons.",
+      parameters: {
+        type: "object",
+        properties: { query: { type: "string", description: "Alex's question or situation in a few words." } },
+        required: ["query"],
+      },
+    },
+  },
+  args: z.object({ query: z.string().trim().min(1).max(300) }),
+  async run({ query }, ctx) {
+    const docs = searchSafety(query);
+    const blocked = (await getCustomerState()).actions.filter((a) => a.status === "blocked" || a.status === "held").at(-1);
+    const forModel = {
+      results: docs.map((d) => ({
+        title: d.title,
+        content: `<untrusted_content source="safety-guide:${d.id}">${scan(d.body).clean}</untrusted_content>`,
+      })),
+      latestBlocked: blocked
+        ? { status: blocked.status, amount: formatAUD(blocked.amountCents), to: blocked.recipientLabel ?? blocked.merchant ?? undefined, reasons: blocked.reasons }
+        : null,
+    };
+    // One sources line per turn.
+    if (!docs.length || ctx.sourcesShown) return { forModel };
+    ctx.sourcesShown = true;
+    return { forModel, card: { type: "sources", items: docs.map((d) => d.title) } };
+  },
+});
+
+const TOOLS = [
+  getAccounts,
+  getRecentTransactions,
+  getPayees,
+  prepareTransferTool,
+  viewProduct,
+  preparePurchaseTool,
+  reportAccountCompromise,
+  searchSafetyGuide,
+];
 export const TOOL_DEFS: ToolDef[] = TOOLS.map((t) => t.def);
 
 /** Validate the model's arguments with Zod and run the tool. Bad args and AppErrors go back to the model; they never throw. */

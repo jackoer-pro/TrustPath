@@ -3,7 +3,7 @@ import { audit } from "@/lib/audit";
 import { chat, DeepSeekError, type LlmMessage } from "./deepseek";
 import { SYSTEM_PROMPT } from "./prompts";
 import { runFallback } from "./fallback";
-import { EMERGENCY_REPLY, runTool, TOOL_DEFS, type ChatCard, type ToolContext } from "./tools";
+import { EMERGENCY_REPLY, runTool, SAFETY_GUIDANCE, TOOL_DEFS, type ChatCard, type ToolContext } from "./tools";
 
 export type ChatMessage = { role: "user" | "assistant"; content: string };
 export type AgentResult = { reply: string; cards: ChatCard[]; offline: boolean };
@@ -44,7 +44,7 @@ export async function runAgent(history: ChatMessage[]): Promise<AgentResult> {
     // Same for emergency protection: keep its card rather than activating again offline.
     if (toolsUsed.some((t) => t.startsWith("prepare_") || t === "report_account_compromise")) {
       await audit("ai_agent", "chat.turn", "chat", null, { offline: true, partial: true, tools: toolsUsed, cards: cards.length });
-      const reply = cards.some((c) => c.type === "emergency") ? EMERGENCY_REPLY : "I've prepared what you asked for below. Please review each one.";
+      const reply = cards.some((c) => c.type === "emergency") ? `${EMERGENCY_REPLY} ${SAFETY_GUIDANCE}` : "I've prepared what you asked for below. Please review each one.";
       return { reply, cards, offline: true };
     }
     return runFallback(recent);
