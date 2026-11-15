@@ -9,7 +9,8 @@ export type Call =
   | { name: "view_product"; args: { productIdOrUrl: string } }
   | { name: "prepare_purchase"; args: { productIdOrUrl: string } }
   | { name: "prepare_transfer"; args: { to: string; amount: string; fromAccount?: string } }
-  | { name: "report_account_compromise"; args: { customerStatement: string } };
+  | { name: "report_account_compromise"; args: { customerStatement: string } }
+  | { name: "search_safety_guide"; args: { query: string } };
 export type ParseResult = { calls: Call[]; asks: string[]; wantsLeft: boolean };
 type Msg = { role: "user" | "assistant"; content: string };
 
@@ -20,6 +21,8 @@ const FROM = /\bfrom\s+(?:my\s+)?([a-z ]+?)(?:\s+account)?(?=$|[,.!?]|\s+(?:to|i
 const TRAILING = /\s+(urgently|now|please|today|asap|right away)$/;
 /** Scam / compromise reports: protection comes first, so nothing else in the message is parsed. */
 const COMPROMISE = /\b(scammed|hacked|security code|protect my (money|account)|wasn['’]t me|was not me|gave [^.]*\b(code|password|pin|card details))\b/;
+/** Safety questions → the knowledge base (only when nothing else was understood). */
+const SAFETY = /\b(scams?|safe|safety|blocked|held|why|fraud|suspicious)\b/;
 const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 /** Commas/periods between digits stay ("$1,500", "120.50"); everything else separates clauses. */
@@ -69,7 +72,9 @@ export function parseIntents(history: Msg[], known: Known[]): ParseResult {
   if (!last || last.role !== "user") return out;
   const text = normaliseMessages([last.content]);
   if (COMPROMISE.test(text)) {
-    out.calls.push({ name: "report_account_compromise", args: { customerStatement: last.content.trim().slice(0, 1000) } });
+    const statement = last.content.trim().slice(0, 1000);
+    out.calls.push({ name: "report_account_compromise", args: { customerStatement: statement } });
+    out.calls.push({ name: "search_safety_guide", args: { query: statement } });
     return out;
   }
 
@@ -92,6 +97,7 @@ export function parseIntents(history: Msg[], known: Known[]): ParseResult {
   }
 
   for (const c of clauses(text)) parseClause(c, known, out);
+  if (!out.calls.length && !out.asks.length && SAFETY.test(text)) out.calls.push({ name: "search_safety_guide", args: { query: last.content.trim().slice(0, 300) } });
   if (out.wantsLeft && !out.calls.some((c) => c.name === "prepare_transfer")) out.calls.push({ name: "get_accounts", args: {} });
   return out;
 }

@@ -6,7 +6,7 @@ import { DEMO_PROFILE_ID } from "@/lib/banking/constants";
 import type { PreparedAction } from "@/lib/banking/actions";
 import type { ChatCard } from "./tools";
 import { parseIntents, type Known } from "./fallback-parse";
-import { EMERGENCY_REPLY, runTool } from "./tools";
+import { EMERGENCY_REPLY, runTool, SAFETY_GUIDANCE } from "./tools";
 import type { AgentResult, ChatMessage } from "./agent";
 
 export const OFFLINE_HELP =
@@ -38,6 +38,7 @@ type TxOut = { description: string; amount: string }[];
 type PrepareOut = { fromAccountLeftAfterPending: string };
 type ProductOut = { merchant: string; name: string; price: string; notice?: string };
 type ErrorOut = { error: string };
+type SafetyOut = { results: { content: string }[]; latestBlocked: { status: string; amount: string; to?: string; reasons: string[] } | null };
 
 /** Rule-based stand-in for the LLM: same tools, same trust engine, templated reply. */
 export async function runFallback(history: ChatMessage[]): Promise<AgentResult> {
@@ -62,6 +63,18 @@ export async function runFallback(history: ChatMessage[]): Promise<AgentResult> 
     } else if (call.name === "view_product") {
       const p = r.forModel as ProductOut;
       reads.push(`I read the ${p.merchant} page for the ${p.name} (${p.price}).${p.notice ? " It contained hidden instructions, which I ignored." : ""}`);
+      if (r.card) cards.push(r.card);
+    } else if (call.name === "search_safety_guide") {
+      const s = r.forModel as SafetyOut;
+      const emergency = cards.some((c) => c.type === "emergency");
+      if (emergency) sentences.push(SAFETY_GUIDANCE);
+      else {
+        const b = s.latestBlocked;
+        if (b && /\b(blocked|held|why)\b/i.test(call.args.query))
+          sentences.push(`Your ${b.amount} payment${b.to ? ` to ${b.to}` : ""} was ${b.status}: ${b.reasons[0]}`);
+        const top = s.results[0]?.content.replace(/<\/?untrusted_content[^>]*>/g, "");
+        if (top) sentences.push(top.split(/(?<=\.)\s+/).slice(0, 2).join(" "));
+      }
       if (r.card) cards.push(r.card);
     } else if (call.name === "report_account_compromise") {
       sentences.push(EMERGENCY_REPLY);

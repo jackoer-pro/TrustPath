@@ -7,6 +7,7 @@ import type { CustomerState } from "@/lib/banking/state";
 import { AccountSummary } from "./AccountSummary";
 import { AlertBanner } from "./AlertBanner";
 import { EmergencyCard } from "./EmergencyCard";
+import { SourcesCard } from "./SourcesCard";
 import { ChatInput } from "./ChatInput";
 import { ChatThread, type ChatMsg } from "./ChatThread";
 import { PinDialog, type ApproveResult } from "./PinDialog";
@@ -175,6 +176,8 @@ export function HomeScreen() {
               <ShieldCard card={c} />
             ) : c.type === "emergency" ? (
               <EmergencyCard card={c} />
+            ) : c.type === "sources" ? (
+              <SourcesCard card={c} />
             ) : (
               <TrustReceipt
                 action={c.action}

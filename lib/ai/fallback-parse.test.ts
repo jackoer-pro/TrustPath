@@ -75,9 +75,18 @@ test("transactions", () => {
 
 test("compromise reports → report_account_compromise only, with the customer's own words", () => {
   const step12 = "I think I gave someone my bank security code over the phone. Protect my money.";
-  assert.deepEqual(parse(u(step12)).calls, [{ name: "report_account_compromise", args: { customerStatement: step12 } }]);
+  assert.deepEqual(parse(u(step12)).calls, [
+    { name: "report_account_compromise", args: { customerStatement: step12 } },
+    { name: "search_safety_guide", args: { query: step12 } },
+  ]);
   for (const s of ["I think I've been scammed", "My account was hacked", "That wasn’t me", "I gave them my password", "Protect my account and send $50 to Mum"])
-    assert.deepEqual(parse(u(s)).calls.map((c) => c.name), ["report_account_compromise"], s);
+    assert.deepEqual(parse(u(s)).calls.map((c) => c.name), ["report_account_compromise", "search_safety_guide"], s);
   for (const s of ["How do I spot a scam?", "What's my security status?", "Send $50 to Mum"])
     assert.ok(!parse(u(s)).calls.some((c) => c.name === "report_account_compromise"), s);
+});
+
+test("safety questions → search_safety_guide only when nothing else matched", () => {
+  for (const s of ["How do I spot a scam?", "Why was my payment blocked?", "Is this call safe?"])
+    assert.deepEqual(parse(u(s)).calls, [{ name: "search_safety_guide", args: { query: s } }], s);
+  assert.deepEqual(parse(u("Why not show my balance")).calls.map((c) => c.name), ["get_accounts"]);
 });
