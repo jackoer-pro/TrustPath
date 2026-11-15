@@ -74,7 +74,9 @@ async function store(
     .single();
   if (error) throw error;
 
-  await audit(origin === "customer" ? "ai_agent" : "system", "action.prepared", "pending_action", row.id, { ...auditDetails, origin });
+  // A Buy tap in the app is the customer's own action; anything else was prepared by the assistant (or a simulation).
+  const actor = auditDetails.via === "app" ? "customer" : origin === "customer" ? "ai_agent" : "system";
+  await audit(actor, "action.prepared", "pending_action", row.id, { ...auditDetails, origin });
   await audit("trust_engine", "action.assessed", "pending_action", row.id, {
     decision: verdict.decision,
     riskLevel: verdict.riskLevel,
@@ -183,7 +185,13 @@ export async function prepareTransfer(input: PrepareTransferInput): Promise<Prep
 }
 
 /** Purchase with the demo debit card. The price always comes from the catalogue, never from the model (invariant 5). */
-export async function preparePurchase(input: { productIdOrUrl: string; userMessages: string[]; origin: Origin }): Promise<PreparedAction> {
+export async function preparePurchase(input: {
+  productIdOrUrl: string;
+  userMessages: string[];
+  origin: Origin;
+  /** The customer tapped Buy in the app (Shop tab or a deals card): an explicit request, so provenance is met. */
+  confirmedInApp?: boolean;
+}): Promise<PreparedAction> {
   const product = getProduct(input.productIdOrUrl);
   if (!product) throw new AppError("UNKNOWN_PRODUCT", "I couldn't find that product in the store.");
 
@@ -196,10 +204,9 @@ export async function preparePurchase(input: { productIdOrUrl: string; userMessa
   const { data: account, error } = await sb.from("accounts").select("id, name, balance_cents").eq("id", card.data!.account_id).single();
   if (error) throw error;
 
-  const provenance = checkProvenance(
-    { type: "purchase", productTerms: [product.id, product.name.toLowerCase(), `/shop/${product.id}`] },
-    input.userMessages,
-  );
+  const provenance = input.confirmedInApp
+    ? { amountOk: true, recipientOk: true }
+    : checkProvenance({ type: "purchase", productTerms: [product.id, product.name.toLowerCase(), `/shop/${product.id}`] }, input.userMessages);
   const balance = Number(account.balance_cents);
   const verdict = assess(
     { type: "purchase", amountCents: product.priceCents },
@@ -227,7 +234,7 @@ export async function preparePurchase(input: { productIdOrUrl: string; userMessa
     },
     verdict,
     input.origin,
-    { type: "purchase", amountCents: product.priceCents, productId: product.id },
+    { type: "purchase", amountCents: product.priceCents, productId: product.id, via: input.confirmedInApp ? "app" : "chat" },
     product.merchant,
   );
 

@@ -7,6 +7,7 @@ import type { CustomerState } from "@/lib/banking/state";
 import { AccountSummary } from "./AccountSummary";
 import { AlertBanner } from "./AlertBanner";
 import { CoachingCard } from "./CoachingCard";
+import { DealsCard } from "./DealsCard";
 import { EmergencyCard } from "./EmergencyCard";
 import { SourcesCard } from "./SourcesCard";
 import { ChatInput } from "./ChatInput";
@@ -128,6 +129,25 @@ export function HomeScreen() {
   const thread = [...messages, ...simulated].sort((x, y) => x.at.localeCompare(y.at));
 
   /** Local outcome first (instant), then the polled DB status (expiry, cancellation), then the prepared status. */
+  /** Buy tapped on a deals card: prepare the purchase (trust engine + receipt + PIN), shown as a new chat message. */
+  async function buy(productId: string): Promise<string | null> {
+    const body = await fetch("/api/shop/buy", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ productId }),
+    })
+      .then((r) => r.json())
+      .catch(() => null);
+    if (!body?.ok) return body?.error?.message ?? OFFLINE_ERROR;
+    const action = body.data as PreparedAction;
+    const content =
+      action.status === "pending_approval"
+        ? `Here's the receipt for the ${action.productName}. Approve it with your PIN when you're ready.`
+        : `I couldn't prepare the ${action.productName}: ${action.reasons[0] ?? "it was blocked"}`;
+    setMessages((m) => [...m, { id: crypto.randomUUID(), role: "assistant", content, at: new Date().toISOString(), cards: [{ type: "receipt", action }] }]);
+    return null;
+  }
+
   /** CoachGuard can hold a waiting payment later: show the latest stored reasons and risk, not only the first ones. */
   const withPolled = (a: PreparedAction): PreparedAction => {
     const polled = state?.actions.find((x) => x.id === a.id);
@@ -187,6 +207,8 @@ export function HomeScreen() {
               <SourcesCard card={c} />
             ) : c.type === "coaching" ? (
               <CoachingCard card={c} />
+            ) : c.type === "deals" ? (
+              <DealsCard picks={c.picks} note={c.note} onBuy={buy} />
             ) : (
               <TrustReceipt
                 action={withPolled(c.action)}

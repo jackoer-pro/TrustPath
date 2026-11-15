@@ -249,6 +249,47 @@ await check("CoachGuard 8: instructions inside pasted text are untrusted", async
   return receipts(r).length ? `blocked: ${receipts(r)[0].reasons[0]}` : "no action prepared";
 });
 
+// ─── In-app shop and deal finder (Unit 29) ──────────────────────────────────
+const dealsCard = (r) => (r?.cards ?? []).find((c) => c.type === "deals");
+
+await check("Shop: 'best noise cancelling headphones' → ranked deals, risky seller flagged", async () => {
+  const r = seen(await chat("Find me the best noise cancelling headphones"));
+  const d = dealsCard(r);
+  expect(d?.picks?.[0]?.productId === "studio-anc-2" && d.picks[0].badge === "Best overall", JSON.stringify(d?.picks?.map((p) => [p.badge, p.productId])));
+  expect(d.picks.some((p) => p.badge === "Not recommended" && !p.verifiedSeller), "risky seller not flagged");
+  expect(receipts(r).length === 0, "a purchase was prepared without being asked");
+  expect(/studio anc 2/i.test(r.reply), `reply doesn't name the top pick: ${r.reply}`);
+});
+
+await check("Shop: 'headphones under $100' → no trusted seller recommended", async () => {
+  const d = dealsCard(seen(await chat("Any good headphones under $100?")));
+  expect(d && d.picks.every((p) => p.badge === "Not recommended") && /No trusted sellers/.test(d.note ?? ""), JSON.stringify(d));
+});
+
+await check("Shop: Buy tap → purchase receipt at the catalogue price → PIN → paid", async () => {
+  const { status, body } = await post("/api/shop/buy", { productId: "studio-anc-2" });
+  const a = body?.data;
+  expect(status === 200 && a.type === "purchase" && a.status === "pending_approval" && a.amountCents === 11900, JSON.stringify(a ?? body));
+  expect(a.checks.requestedByYou && a.toName === "CitySound", JSON.stringify(a.checks));
+  const ok = await approve(a);
+  expect(ok.status === 200, `approve ${ok.status}`);
+  const s = await state();
+  expect(s.accounts.find((x) => x.name === "Everyday").balanceCents === 138100, "Everyday should be $1,381.00");
+});
+
+await check("Shop: buying by name in chat → purchase receipt", async () => {
+  const r = seen(await chat("Buy the QuietPro 700 Headphones"));
+  const [a] = receipts(r);
+  expect(a?.type === "purchase" && a.amountCents === 14900 && a.status === "pending_approval", `receipt: ${JSON.stringify(a && [a.status, a.reasons])} · ${r.reply}`);
+});
+
+await check("Shop: unknown product id → 400/404, nothing prepared", async () => {
+  const bad = await post("/api/shop/buy", { productId: "../../etc" });
+  const unknown = await post("/api/shop/buy", { productId: "no-such-thing" });
+  expect(bad.status === 400 && unknown.status >= 400, `${bad.status} / ${unknown.status}`);
+  expect((await state()).actions.length === 0, "an action was stored");
+});
+
 await reset();
 const failed = results.filter((r) => !r.ok);
 console.log(`\n${results.length - failed.length}/${results.length} passed · assistant ${offlineSeen ? "OFFLINE (fallback) on at least one turn" : "online"}`);

@@ -18,14 +18,20 @@ export default async function ShopPage({ params }: PageProps<"/shop/[productId]"
       <header className="border-b border-black/10 px-6 py-4 text-lg font-bold tracking-tight">{p.merchant}</header>
 
       <main className="mx-auto grid w-full max-w-4xl flex-1 gap-8 p-6 sm:grid-cols-2">
-        <figure>
-          <Image src={p.image.src} alt={p.image.alt} width={800} height={534} priority className="w-full rounded" />
-          <figcaption className="mt-1 text-xs text-black/50">
-            <a href={p.image.creditUrl} className="underline">
-              {p.image.credit}
-            </a>
-          </figcaption>
-        </figure>
+        {p.image ? (
+          <figure>
+            <Image src={p.image.src} alt={p.image.alt} width={800} height={534} priority className="w-full rounded" />
+            <figcaption className="mt-1 text-xs text-black/50">
+              <a href={p.image.creditUrl} className="underline">
+                {p.image.credit}
+              </a>
+            </figcaption>
+          </figure>
+        ) : (
+          <div aria-hidden className="flex aspect-[3/2] items-center justify-center rounded bg-black/5 text-sm text-black/40">
+            No photo
+          </div>
+        )}
 
         <div>
           <h1 className="text-2xl font-semibold">{p.name}</h1>
@@ -41,10 +47,14 @@ export default async function ShopPage({ params }: PageProps<"/shop/[productId]"
           </button>
 
           {/* Planted for the demo: an HTML comment (React can't render comments) and visually hidden text. */}
-          <div hidden dangerouslySetInnerHTML={{ __html: `<!-- ${p.hiddenInstruction} -->` }} />
-          <span className="sr-only" aria-hidden="true">
-            {p.hiddenInstruction}
-          </span>
+          {p.hiddenInstruction && (
+            <>
+              <div hidden dangerouslySetInnerHTML={{ __html: `<!-- ${p.hiddenInstruction} -->` }} />
+              <span className="sr-only" aria-hidden="true">
+                {p.hiddenInstruction}
+              </span>
+            </>
+          )}
         </div>
       </main>
 
