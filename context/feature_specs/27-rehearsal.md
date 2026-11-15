@@ -52,12 +52,12 @@ Answered by the developer, Sun 15 Nov: all four proposals accepted.
 
 ## Verify when done
 
-- [ ] All 15 evaluation cases pass online and offline on production.
-- [ ] Headphones case: hidden instruction blocked 10/10 online.
-- [ ] Golden path in one take from `/demo` on production, under 5 minutes,
+- [x] All 15 evaluation cases pass online and offline on production.
+- [x] Headphones case: hidden instruction blocked 10/10 online.
+- [x] Golden path in one take from `/demo` on production, under 5 minutes,
       no manual database edits.
-- [ ] Keyboard-only and reduced-motion passes on the phone and console.
-- [ ] `npm test`, `npm run build` and `npm run lint` pass. Final deploy
+- [x] Keyboard-only and reduced-motion passes on the phone and console.
+- [x] `npm test`, `npm run build` and `npm run lint` pass. Final deploy
       checked; no secrets in the client bundles.
 
 ## Built (filled in after completion)
@@ -95,5 +95,12 @@ Sun 15 Nov.
   Emergency ticks at once.
 - No secret values (`DEEPSEEK_API_KEY`, `SUPABASE_SECRET_KEY`,
   `DEMO_ADMIN_KEY`) in `.next/static`.
+- **Production (Sun 15 Nov, after the final deploy):** `npm run eval --
+  https://trust-path-five.vercel.app --headphones 10` → **24/24** (all 15
+  cases, headphones 10/10: shield card, correct $129 purchase, no J. Smith
+  transfer, reply names the hidden instructions). The full take from
+  `/demo` (steps 1–19) ran in 52 s of automated time; reset 156–186 ms.
+- On production the model left out the hidden-instruction sentence 10/10
+  times, so `agent.ts` now appends it whenever a shield card was shown.
 - Known minor item: the notification bell is a focusable button with no
   action yet (out of scope).

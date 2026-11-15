@@ -312,6 +312,8 @@ All decided Sat 14 Nov 2026:
 
 ## Session Notes
 
+- **Final rehearsal (Sun 15 Nov):** production passes `npm run eval` 24/24
+  (15 cases, headphones 10/10) and the full `/demo` take (steps 1–19).
 - **Production URL: https://trust-path-five.vercel.app** (Vercel, `syd1`,
   auto-deploys from `main`). Hash-style deployment URLs need a Vercel login.
 
