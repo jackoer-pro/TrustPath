@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Activity, ScrollText, ShieldAlert } from "lucide-react";
+import { Activity, Scale, ScrollText, ShieldAlert } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { AuditLog } from "./AuditLog";
 import { CardEventList } from "./CardEventList";
 import { IncidentDetail } from "./IncidentDetail";
+import { DecisionTimeline } from "./DecisionTimeline";
 import { IncidentList } from "./IncidentList";
 import { saveStaffKey, useStaffKey } from "./staffKey";
 import { useOpsState } from "./useOpsState";
@@ -13,6 +14,7 @@ import { useOpsState } from "./useOpsState";
 const nav = [
   { label: "Live", Icon: Activity },
   { label: "Incidents", Icon: ShieldAlert },
+  { label: "Decisions", Icon: Scale },
   { label: "Audit", Icon: ScrollText },
 ];
 
@@ -88,6 +90,12 @@ export function OpsView() {
           ) : (
             <p className="mt-2 text-sm text-muted">Select an incident to see its case brief.</p>
           )}
+        </Card>
+
+        <Card id="decisions" className="min-w-0 p-4">
+          <h2 className="text-lg font-semibold">Session Trust timeline</h2>
+          <p className="text-xs text-muted">Every decision, with where the request came from. Customer instructions are kept apart from external content and other sessions.</p>
+          {state && <DecisionTimeline decisions={state.decisions} fresh={fresh} />}
         </Card>
 
         <Card id="audit" className="min-w-0 overflow-x-auto p-4">

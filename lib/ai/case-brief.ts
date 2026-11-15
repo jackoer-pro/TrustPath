@@ -58,9 +58,9 @@ async function buildFacts(incidentId: string): Promise<CaseFacts | null> {
     };
   }
   if (i.action_id) {
-    const { data: a, error: aErr } = await sb.from("pending_actions").select("*").eq("id", i.action_id).single();
+    const { data: a, error: aErr } = await sb.from("pending_actions").select("*, payees(name)").eq("id", i.action_id).single();
     if (aErr) throw aErr;
-    facts.action = { amountCents: Number(a.amount_cents), to: a.recipient_label ?? a.merchant ?? "a saved payee", status: a.status, origin: a.origin, reasons: a.reasons as string[] };
+    facts.action = { amountCents: Number(a.amount_cents), to: (a.payees as { name: string } | null)?.name ?? a.recipient_label ?? a.merchant ?? "a saved payee", status: a.status, origin: a.origin, reasons: a.reasons as string[] };
   }
   const hourBefore = new Date(Date.parse(i.created_at) - 3600_000).toISOString();
   const { data: rel, error: rErr } = await sb

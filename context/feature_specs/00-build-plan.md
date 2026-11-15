@@ -121,6 +121,7 @@ on are done. "Act" and "step" refer to the golden path in
 | #  | Unit                         | Builds                                                                             | Depends on |
 | -- | ---------------------------- | ---------------------------------------------------------------------------------- | ---------- |
 | 28 | CoachGuard                   | Paste a message or call transcript (chat or Protect) → signals with exact evidence, plain explanation, safe next step; trust rule R8 holds payments to new payees (replaces the old 28 + 29) | 27         |
+| 30–34 | Personal context and Session Trust | Personal Context Engine (safe-to-spend, payday plan, Me tab), R9 AI mandate (My AI Permissions), R10 Session Trust (unfamiliar-device attack → two-tap recovery), decision trace ("Why?" + console timeline), AFCA opening/closing slides | 29 |
 | 29 | In-app shop and deal finder  | Shop tab with several merchants; "find the best deal" ranks reliability and price deterministically; buy through the same Trust Receipt and PIN | 28         |
 
 ## Why Units Are Split This Way

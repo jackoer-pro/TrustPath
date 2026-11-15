@@ -2,7 +2,7 @@ import { caseNumber } from "@/lib/case-number";
 import type { OpsState } from "@/lib/ops/state";
 import { clock, flash, LEVEL } from "./tone";
 
-const TYPE = { card_fraud: "Card fraud", account_compromise: "Account compromise", injection_blocked: "Injection blocked", scam_coaching: "Scam coaching" } as const;
+const TYPE = { card_fraud: "Card fraud", account_compromise: "Account compromise", injection_blocked: "Injection blocked", scam_coaching: "Scam coaching", session_risk: "Session risk" } as const;
 const STATUS = { open: "Open", contained: "Contained", investigated: "Investigated" } as const;
 
 type Props = { incidents: OpsState["incidents"]; fresh: Set<string>; selectedId: string | null; onSelect: (id: string) => void };

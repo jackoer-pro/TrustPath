@@ -8,6 +8,8 @@ import { AccountSummary } from "./AccountSummary";
 import { AlertBanner } from "./AlertBanner";
 import { CoachingCard } from "./CoachingCard";
 import { DealsCard } from "./DealsCard";
+import { PaydayPlanCard } from "./PaydayPlanCard";
+import { SafeToSpendCard } from "./SafeToSpendCard";
 import { EmergencyCard } from "./EmergencyCard";
 import { SourcesCard } from "./SourcesCard";
 import { ChatInput } from "./ChatInput";
@@ -45,6 +47,7 @@ function simulationMessage(a: PolledAction, fromName: string): ChatMsg {
     checks: { requestedByYou: false, recipientKnown: false, fundsAvailable: true },
     createdAt: a.createdAt,
     expiresAt: a.expiresAt,
+    trace: a.trace,
   };
   return {
     id: `sim-${a.id}`,
@@ -68,7 +71,7 @@ export function HomeScreen() {
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Newest unanswered card alert; hidden optimistically once answered (the next poll confirms).
-  const alert = state?.notifications.find((n) => n.kind === "card_alert" && !answered.includes(n.id));
+  const alert = state?.notifications.find((n) => (n.kind === "card_alert" || n.kind === "session_alert") && !answered.includes(n.id));
 
   async function answer(response: "confirmed" | "denied") {
     if (!alert) return;
@@ -89,8 +92,19 @@ export function HomeScreen() {
     }
     setAnswered((a) => [...a, alert.id]);
     if (!body.ok) return;
-    const content = response === "denied" ? DENIED_REPLY : CONFIRMED_REPLY;
-    setMessages((m) => [...m, { id: crypto.randomUUID(), role: "assistant", content, at: new Date().toISOString() }]);
+    const emergency = body.data?.emergency as { incidentId: string; measures: { label: string; done: boolean }[] } | null | undefined;
+    const content =
+      alert.kind === "session_alert"
+        ? response === "denied"
+          ? "Thanks. I've cancelled that payment and secured your account. Only our team can lift these protections, and they'll contact you."
+          : "Thanks. The payment stays on hold until our team confirms it with you."
+        : response === "denied"
+          ? DENIED_REPLY
+          : CONFIRMED_REPLY;
+    setMessages((m) => [
+      ...m,
+      { id: crypto.randomUUID(), role: "assistant", content, at: new Date().toISOString(), ...(emergency && { cards: [{ type: "emergency" as const, ...emergency }] }) },
+    ]);
     if (response === "denied") inputRef.current?.focus();
   }
 
@@ -184,7 +198,14 @@ export function HomeScreen() {
   return (
     <>
       <div className="shrink-0 pb-4">
-        {alert && <AlertBanner title={alert.title} body={alert.body} busy={alertBusy} error={alertError} onAnswer={answer} />}
+        {alert && <AlertBanner
+            title={alert.title}
+            body={alert.body}
+            busy={alertBusy}
+            error={alertError}
+            onAnswer={answer}
+            denyLabel={alert.kind === "session_alert" ? "No, secure my account" : undefined}
+          />}
         {error && !state ? (
           <p className="px-4 text-sm text-muted">Can&apos;t load your accounts right now.</p>
         ) : (
@@ -208,7 +229,11 @@ export function HomeScreen() {
             ) : c.type === "coaching" ? (
               <CoachingCard card={c} />
             ) : c.type === "deals" ? (
-              <DealsCard picks={c.picks} note={c.note} onBuy={buy} />
+              <DealsCard picks={c.picks} note={c.note} onBuy={buy} safeToSpendCents={c.safeToSpendCents} />
+            ) : c.type === "safe_to_spend" ? (
+              <SafeToSpendCard card={c} />
+            ) : c.type === "payday_plan" ? (
+              <PaydayPlanCard card={c} />
             ) : (
               <TrustReceipt
                 action={withPolled(c.action)}

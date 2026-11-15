@@ -83,6 +83,7 @@ before it's built. What each unit contains and when it counts as done is in
 
 - [x] 28 CoachGuard (scam-coaching detector; replaces the old 28 + 29)
 - [x] 29 In-app shop and deal finder
+- [x] 30–34 Personal context, AI mandate, Session Trust, "Why?", story slides
 
 ## Completed
 
@@ -219,6 +220,13 @@ before it's built. What each unit contains and when it counts as done is in
   `find_deals` assistant tool ranking simulated merchants by reliability then
   price (risky sellers never recommended); Buy → Trust Receipt → PIN.
   `npm run eval` 29/29 online and offline. See `feature_specs/29-shop-deals.md`.
+- **Units 30–34 Personal context and Session Trust** (Sun 15 Nov): safe-to-spend
+  ($345, deterministic), "do my usual payday plan", Me tab (editable context +
+  My AI Permissions, enforced by R9), R10 Session Trust with a simulated
+  unfamiliar-device attack and two-tap recovery, one decision trace for the
+  customer ("Why?") and staff (Session Trust timeline), AFCA opening and
+  closing slides. Migration 0003. `npm run eval` 37/37 online and offline.
+  See `feature_specs/30-34-personal-context-and-session-trust.md`.
 
 ## In Progress
 

@@ -16,7 +16,11 @@ export type Call =
   | { name: "search_safety_guide"; args: { query: string } }
   | { name: "check_message_for_scam_coaching"; args: Record<string, never> }
   | { name: "find_deals"; args: { query: string } }
-  | { name: "buy_named_product"; args: { productIdOrUrl: string } };
+  | { name: "buy_named_product"; args: { productIdOrUrl: string } }
+  | { name: "prepare_payday_plan"; args: Record<string, never> }
+  | { name: "get_safe_to_spend"; args: { amount?: string } }
+  | { name: "get_financial_context"; args: Record<string, never> }
+  | { name: "update_financial_preference"; args: { setting: "min_buffer" | "savings_target"; amount: string } };
 export type ParseResult = { calls: Call[]; asks: string[]; wantsLeft: boolean };
 type Msg = { role: "user" | "assistant"; content: string };
 
@@ -87,6 +91,30 @@ export function parseIntents(history: Msg[], known: Known[]): ParseResult {
     const statement = last.content.trim().slice(0, 1000);
     out.calls.push({ name: "report_account_compromise", args: { customerStatement: statement } });
     out.calls.push({ name: "search_safety_guide", args: { query: statement } });
+    return out;
+  }
+
+  // Personal context (Unit 30–31): payday plan, safe-to-spend, affordability, preferences.
+  if ((/\b(payday plan|usual payday|usual plan)\b/.test(text) || /\bdo my usual\s*[.!]?\s*$/.test(text))) {
+    out.calls.push({ name: "prepare_payday_plan", args: {} });
+    return out;
+  }
+  const pref = /\b(?:change|set|update|make|raise|lower)\s+my\s+(minimum\s+buffer|buffer|savings\s+(?:goal|target))\s+to\s+\$?(\d[\d,]*(?:\.\d{1,2})?)/.exec(text);
+  if (pref) {
+    out.calls.push({ name: "update_financial_preference", args: { setting: /buffer/.test(pref[1]) ? "min_buffer" : "savings_target", amount: pref[2].replace(/,/g, "") } });
+    return out;
+  }
+  const afford = /\bcan i afford\b/.test(text) ? AMOUNT.exec(text) : null;
+  if (afford) {
+    out.calls.push({ name: "get_safe_to_spend", args: { amount: afford[1].replace(/,/g, "") + (afford[2] ?? "") } });
+    return out;
+  }
+  if (/\b(safe to spend|what can i spend|how much can i spend|spend until payday|left to spend|spending money)\b/.test(text)) {
+    out.calls.push({ name: "get_safe_to_spend", args: {} });
+    return out;
+  }
+  if (/\bwhy\b[^.?!]*\b(sav(e|ing)|buffer|recommend)\b/.test(text) || /\b(my (financial )?(context|commitments|goals)|when is (my )?payday)\b/.test(text)) {
+    out.calls.push({ name: "get_financial_context", args: {} });
     return out;
   }
 

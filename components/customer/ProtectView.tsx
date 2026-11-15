@@ -23,7 +23,9 @@ const caseTitle = (i: Incident) =>
     ? "Account protection case"
     : i.type === "injection_blocked"
       ? "Hidden instructions blocked"
-      : i.type === "scam_coaching"
+      : i.type === "session_risk"
+        ? "Unrecognised device stopped"
+        : i.type === "scam_coaching"
         ? "Message checked: possible scam coaching"
         : i.title;
 
@@ -46,7 +48,7 @@ export function ProtectView() {
         <>
           {error && <p className="text-xs text-muted">Reconnecting…</p>}
 
-          {state.notifications.some((n) => n.kind === "card_alert") && (
+          {state.notifications.some((n) => n.kind === "card_alert" || n.kind === "session_alert") && (
             <Link
               href="/"
               className="flex items-center gap-3 rounded-xl border border-risk-high/30 bg-risk-high-bg p-4 text-risk-high shadow-sm"

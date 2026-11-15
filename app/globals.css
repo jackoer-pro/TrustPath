@@ -18,6 +18,9 @@
   --color-navy-strong: #15133a;
   --color-trust: #0b6e69;
   --color-trust-bg: #e3f2f0;
+  /* Light accents for text on the navy demo slides. */
+  --color-trust-light: #7fd6cf;
+  --color-brand-light: #ff8a85;
   --color-risk-low: #12733a;
   --color-risk-low-bg: #e6f4ea;
   --color-risk-medium: #9a5b00;

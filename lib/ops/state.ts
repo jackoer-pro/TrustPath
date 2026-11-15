@@ -3,20 +3,23 @@ import "server-only";
 import { db } from "@/lib/db";
 import { parseBrief } from "@/lib/ai/case-brief";
 import { DEMO_PROFILE_ID } from "@/lib/banking/constants";
+import type { DecisionTrace } from "@/lib/banking/trace";
 
 const LIMIT = 50;
 
 export async function getOpsState() {
   const sb = db();
   const dayAgo = new Date(Date.now() - 24 * 3600_000).toISOString();
-  const [events, incidents, audit, customer] = await Promise.all([
+  const [events, incidents, audit, customer, decisions] = await Promise.all([
     sb.from("card_events").select("*, cards(last_four)").order("created_at", { ascending: false }).limit(LIMIT),
     sb.from("incidents").select("*").order("created_at", { ascending: false }),
     sb.from("audit_logs").select("*").order("created_at", { ascending: false }).limit(LIMIT),
     // ponytail: single demo customer; join incidents to their own profile when there are many.
     sb.from("profiles").select("name, outgoing_paused, cards(last_four, status, reported_lost)").eq("id", DEMO_PROFILE_ID).single(),
+    // Session Trust timeline: every assessed action with its decision trace.
+    sb.from("pending_actions").select("id, status, origin, created_at, trace").not("trace", "is", null).order("created_at", { ascending: false }).limit(25),
   ]);
-  for (const r of [events, incidents, audit, customer]) if (r.error) throw r.error;
+  for (const r of [events, incidents, audit, customer, decisions]) if (r.error) throw r.error;
   const actionIds = incidents.data!.map((i) => i.action_id as string | null).filter((x): x is string => !!x);
   const actions = actionIds.length ? await sb.from("pending_actions").select("*").in("id", actionIds) : { data: [], error: null };
   if (actions.error) throw actions.error;
@@ -41,7 +44,7 @@ export async function getOpsState() {
   }));
   const incidentRows = incidents.data!.map((i) => ({
     id: i.id as string,
-    type: i.type as "card_fraud" | "account_compromise" | "injection_blocked" | "scam_coaching",
+    type: i.type as "card_fraud" | "account_compromise" | "injection_blocked" | "scam_coaching" | "session_risk",
     severity: i.severity as "low" | "medium" | "high" | "critical",
     status: i.status as "open" | "contained" | "investigated",
     title: i.title as string,
@@ -57,6 +60,13 @@ export async function getOpsState() {
 
   const c = customer.data!;
   return {
+    decisions: decisions.data!.map((d) => ({
+      id: d.id as string,
+      status: d.status as string,
+      origin: d.origin as string,
+      createdAt: d.created_at as string,
+      trace: d.trace as DecisionTrace,
+    })),
     customer: {
       name: c.name as string,
       outgoingPaused: c.outgoing_paused as boolean,

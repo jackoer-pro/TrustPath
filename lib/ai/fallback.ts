@@ -43,9 +43,21 @@ type SafetyOut = { results: { content: string }[]; latestBlocked: { status: stri
 
 /** Rule-based stand-in for the LLM: same tools, same trust engine, templated reply. */
 /** True when the rule-based parser reads the latest message as a clear transfer or purchase request. */
-export async function expectsPrepare(history: ChatMessage[]): Promise<boolean> {
+/** Requests whose answer must come from a deterministic tool (money moves or money numbers), never from model text. */
+const MUST_USE: Record<string, string> = {
+  prepare_transfer: "prepare_transfer",
+  prepare_purchase: "prepare_purchase",
+  buy_named_product: "prepare_purchase",
+  prepare_payday_plan: "prepare_payday_plan",
+  get_safe_to_spend: "get_safe_to_spend",
+  update_financial_preference: "update_financial_preference",
+};
+
+/** The deterministic tool the rule-based parser says this message needs, or null. */
+export async function expectedTool(history: ChatMessage[]): Promise<string | null> {
   const calls = parseIntents(history, await knownRecipients()).calls;
-  return calls.some((c) => c.name === "prepare_transfer" || c.name === "prepare_purchase" || c.name === "buy_named_product");
+  const hit = calls.find((c) => c.name in MUST_USE);
+  return hit ? MUST_USE[hit.name] : null;
 }
 
 export async function runFallback(history: ChatMessage[]): Promise<AgentResult> {
@@ -76,6 +88,26 @@ export async function runFallback(history: ChatMessage[]): Promise<AgentResult> 
       const p = r.forModel as ProductOut;
       reads.push(`I read the ${p.merchant} page for the ${p.name} (${p.price}).${p.notice ? " The page also had hidden instructions; I ignored them." : ""}`);
       if (r.card) cards.push(r.card);
+    } else if (call.name === "get_safe_to_spend") {
+      const s = r.forModel as { explanation: string; affordability?: string };
+      sentences.push(s.affordability ?? s.explanation);
+      if (r.card) cards.push(r.card);
+    } else if (call.name === "get_financial_context") {
+      const c = r.forModel as { savingsGoal: string; minimumBuffer: string; nextPayday: string };
+      sentences.push(`${c.savingsGoal} Your minimum buffer is ${c.minimumBuffer}, and your next payday is ${new Date(c.nextPayday + "T00:00:00").toLocaleDateString("en-AU", { day: "numeric", month: "long" })}.`);
+    } else if (call.name === "update_financial_preference") {
+      const u = r.forModel as { changed: string; safeToSpendNow: string };
+      sentences.push(`Done. ${u.changed}. You can now safely spend ${u.safeToSpendNow} until payday.`);
+      if (r.card) cards.push(r.card);
+    } else if (call.name === "prepare_payday_plan") {
+      const p = r.forModel as { prepared: { to: string; amount: string; status: string }[]; safeToSpendAfter: string };
+      sentences.push(
+        p.prepared.length
+          ? `I've prepared your usual payday plan: ${list(p.prepared.map((x) => `${x.amount} to ${x.to}`))}. Approve each receipt below. You can still safely spend ${p.safeToSpendAfter} until payday.`
+          : "Your payday plan is already done or waiting for approval this pay cycle.",
+      );
+      if (r.card) cards.push(r.card);
+      for (const c of r.cards ?? []) cards.push(c);
     } else if (call.name === "find_deals") {
       const d = r.forModel as { picks: { badge: string; product: string; merchant: string; price: string; why: string }[]; note: string | null };
       const top = d.picks.find((p) => p.badge !== "Not recommended");
