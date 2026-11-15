@@ -71,6 +71,9 @@ a change is instructed, explain it in the summary.
 - `lib/ops/staff.ts` (the only code that unlocks cards or lifts restrictions)
   and `lib/protect/emergency.ts` (lockdown). `lib/ai/no-staff-path.test.ts`
   guards that the AI has no path to either staff action.
+- `lib/protect/coaching/**` (CoachGuard) and `lib/ai/paste.ts`: they decide
+  what counts as pasted (untrusted) text and can hold payments. Restrictive
+  only; covered by `no-staff-path.test.ts`.
 
 ## Protected Files
 

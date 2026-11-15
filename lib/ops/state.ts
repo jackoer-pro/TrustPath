@@ -41,7 +41,7 @@ export async function getOpsState() {
   }));
   const incidentRows = incidents.data!.map((i) => ({
     id: i.id as string,
-    type: i.type as "card_fraud" | "account_compromise" | "injection_blocked",
+    type: i.type as "card_fraud" | "account_compromise" | "injection_blocked" | "scam_coaching",
     severity: i.severity as "low" | "medium" | "high" | "critical",
     status: i.status as "open" | "contained" | "investigated",
     title: i.title as string,

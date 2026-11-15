@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { caseNumber } from "@/lib/case-number";
 import type { CustomerState } from "@/lib/banking/state";
+import { CheckMessage } from "./CheckMessage";
 import { SecurityStatus } from "./SecurityStatus";
 import { useCustomerState } from "./useCustomerState";
 
@@ -18,7 +19,13 @@ const CARD_STATUS = {
 } as const;
 
 const caseTitle = (i: Incident) =>
-  i.type === "account_compromise" ? "Account protection case" : i.type === "injection_blocked" ? "Hidden instructions blocked" : i.title;
+  i.type === "account_compromise"
+    ? "Account protection case"
+    : i.type === "injection_blocked"
+      ? "Hidden instructions blocked"
+      : i.type === "scam_coaching"
+        ? "Message checked: possible scam coaching"
+        : i.title;
 
 const when = (iso: string) => new Date(iso).toLocaleString("en-AU", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
 
@@ -52,6 +59,8 @@ export function ProtectView() {
           )}
 
           <SecurityStatus state={state} />
+
+          <CheckMessage />
 
           <Card className="p-4">
             <h2 className="text-lg font-semibold">Cards</h2>

@@ -95,3 +95,31 @@ test("R7 unverified payee: step_up, medium warning", () => {
   const r = assess(transfer(5000), { ...base, recipient: { kind: "person", verified: false } });
   assert.deepEqual(r, { decision: "step_up", riskLevel: "medium", reasons: ["This payee hasn't been verified yet."], flags: [] });
 });
+
+test("R8 CoachGuard: strong coaching + payee added yesterday → hold, high, exact reason", () => {
+  const coaching = { strong: true, summary: 'a message you shared tells you to hide something from the bank ("Don\'t tell the bank")' };
+  const r = assess({ type: "transfer", amountCents: 40000 }, { ...base, recipient: { kind: "person", verified: false, addedDaysAgo: 1 }, coaching });
+  assert.equal(r.decision, "hold");
+  assert.equal(r.riskLevel, "high");
+  assert.ok(r.reasons.includes(`Possible scam coaching: ${coaching.summary}. This payee is new, so our team will check with you before it goes ahead.`));
+  assert.ok(r.reasons.includes("This payee hasn't been verified yet."));
+});
+
+test("R8: established payee → warning only; own account, purchases and weak signals → nothing", () => {
+  const coaching = { strong: true, summary: "x" };
+  const mum = assess({ type: "transfer", amountCents: 5000 }, { ...base, recipient: { kind: "person", verified: true, addedDaysAgo: 400 }, coaching });
+  assert.equal(mum.decision, "step_up");
+  assert.ok(mum.reasons.some((x) => x.startsWith("Possible scam coaching: x. Only approve if you're sure.")));
+  const own = assess({ type: "transfer", amountCents: 5000 }, { ...base, recipient: { kind: "own_account", verified: true }, coaching });
+  assert.deepEqual(own.reasons, []);
+  const buy = assess({ type: "purchase", amountCents: 5000 }, { ...base, recipient: null, cardStatus: "active", coaching });
+  assert.ok(!buy.reasons.some((x) => /coaching/.test(x)));
+  const weak = assess({ type: "transfer", amountCents: 40000 }, { ...base, recipient: { kind: "person", verified: false, addedDaysAgo: 1 }, coaching: { strong: false, summary: "x" } });
+  assert.equal(weak.decision, "step_up");
+});
+
+test("R8: unknown recipient stays blocked (R3 wins) but the coaching reason is shown too", () => {
+  const r = assess({ type: "transfer", amountCents: 40000 }, { ...base, recipient: null, coaching: { strong: true, summary: "x" } });
+  assert.equal(r.decision, "block");
+  assert.ok(r.reasons.some((x) => x.startsWith("Possible scam coaching")));
+});

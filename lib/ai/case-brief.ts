@@ -48,6 +48,15 @@ async function buildFacts(incidentId: string): Promise<CaseFacts | null> {
     };
     facts.customerResponse = n?.response ?? null;
   }
+  if (i.coaching_assessment_id) {
+    const { data: c, error: cErr } = await sb.from("coaching_assessments").select("assessment, signals, explanation").eq("id", i.coaching_assessment_id).single();
+    if (cErr) throw cErr;
+    facts.coaching = {
+      assessment: c.assessment,
+      signals: (c.signals as { type: string; evidence: string }[]).map((s) => ({ type: s.type, evidence: s.evidence })),
+      explanation: c.explanation,
+    };
+  }
   if (i.action_id) {
     const { data: a, error: aErr } = await sb.from("pending_actions").select("*").eq("id", i.action_id).single();
     if (aErr) throw aErr;

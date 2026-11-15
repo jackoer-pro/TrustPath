@@ -13,7 +13,8 @@ export function StaffActions({ incident: i, customer, staffKey }: Props) {
   const [message, setMessage] = useState<{ ok: boolean; text: string }>();
   const [confirming, setConfirming] = useState(false);
 
-  const resolvable = i.type !== "injection_blocked";
+  // Only these have restrictions or a card lock to lift (lib/ops/staff.ts → resolveIncident).
+  const resolvable = i.type === "card_fraud" || i.type === "account_compromise";
   const done = i.status === "investigated";
   const locked = customer.cards.filter((c) => c.status !== "active" && !c.reportedLost).map((c) => `•••• ${c.lastFour}`);
 

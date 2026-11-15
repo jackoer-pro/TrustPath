@@ -4,7 +4,7 @@ import { audit, type Actor } from "@/lib/audit";
 
 export type IncidentFields = {
   profileId: string;
-  type: "card_fraud" | "account_compromise" | "injection_blocked";
+  type: "card_fraud" | "account_compromise" | "injection_blocked" | "scam_coaching";
   severity: "low" | "medium" | "high" | "critical";
   status: "open" | "contained";
   title: string;
@@ -12,6 +12,7 @@ export type IncidentFields = {
   cardEventId?: string;
   actionId?: string;
   measures?: string[];
+  coachingAssessmentId?: string;
 };
 
 export async function createIncident(f: IncidentFields, actor: Actor): Promise<{ id: string }> {
@@ -27,6 +28,7 @@ export async function createIncident(f: IncidentFields, actor: Actor): Promise<{
       card_event_id: f.cardEventId ?? null,
       action_id: f.actionId ?? null,
       measures: f.measures ?? [],
+      coaching_assessment_id: f.coachingAssessmentId ?? null,
     })
     .select("id")
     .single();

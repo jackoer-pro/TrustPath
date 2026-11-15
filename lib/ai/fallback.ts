@@ -4,8 +4,9 @@ import { audit } from "@/lib/audit";
 import { formatAUD } from "@/lib/money";
 import { DEMO_PROFILE_ID } from "@/lib/banking/constants";
 import type { PreparedAction } from "@/lib/banking/actions";
-import type { ChatCard } from "./tools";
+import type { ChatCard, ToolContext } from "./tools";
 import { parseIntents, type Known } from "./fallback-parse";
+import { looksPasted, ownWords } from "./paste";
 import { EMERGENCY_REPLY, runTool, SAFETY_GUIDANCE } from "./tools";
 import type { AgentResult, ChatMessage } from "./agent";
 
@@ -43,7 +44,11 @@ type SafetyOut = { results: { content: string }[]; latestBlocked: { status: stri
 /** Rule-based stand-in for the LLM: same tools, same trust engine, templated reply. */
 export async function runFallback(history: ChatMessage[]): Promise<AgentResult> {
   const parsed = parseIntents(history, await knownRecipients());
-  const ctx = { userMessages: history.filter((m) => m.role === "user").map((m) => m.content) };
+  const last = history.at(-1);
+  const ctx: ToolContext = {
+    userMessages: ownWords(history.filter((m) => m.role === "user").map((m) => m.content)),
+    pasted: last?.role === "user" && looksPasted(last.content) ? last.content : undefined,
+  };
   const sentences: string[] = [];
   const reads: string[] = [];
   const cards: ChatCard[] = [];
@@ -63,6 +68,11 @@ export async function runFallback(history: ChatMessage[]): Promise<AgentResult> 
     } else if (call.name === "view_product") {
       const p = r.forModel as ProductOut;
       reads.push(`I read the ${p.merchant} page for the ${p.name} (${p.price}).${p.notice ? " The page also had hidden instructions; I ignored them." : ""}`);
+      if (r.card) cards.push(r.card);
+    } else if (call.name === "check_message_for_scam_coaching") {
+      const c = r.forModel as { explanation: string; nextAction: string; paymentsHeld: { amount: string; to: string }[] };
+      sentences.push(c.explanation, c.nextAction);
+      for (const h of c.paymentsHeld) sentences.push(`I've put your ${h.amount} payment to ${h.to} on hold until our team speaks with you.`);
       if (r.card) cards.push(r.card);
     } else if (call.name === "search_safety_guide") {
       const s = r.forModel as SafetyOut;

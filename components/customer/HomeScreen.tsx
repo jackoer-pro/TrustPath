@@ -6,6 +6,7 @@ import type { PreparedAction } from "@/lib/banking/actions";
 import type { CustomerState } from "@/lib/banking/state";
 import { AccountSummary } from "./AccountSummary";
 import { AlertBanner } from "./AlertBanner";
+import { CoachingCard } from "./CoachingCard";
 import { EmergencyCard } from "./EmergencyCard";
 import { SourcesCard } from "./SourcesCard";
 import { ChatInput } from "./ChatInput";
@@ -127,6 +128,12 @@ export function HomeScreen() {
   const thread = [...messages, ...simulated].sort((x, y) => x.at.localeCompare(y.at));
 
   /** Local outcome first (instant), then the polled DB status (expiry, cancellation), then the prepared status. */
+  /** CoachGuard can hold a waiting payment later: show the latest stored reasons and risk, not only the first ones. */
+  const withPolled = (a: PreparedAction): PreparedAction => {
+    const polled = state?.actions.find((x) => x.id === a.id);
+    return polled ? { ...a, reasons: polled.reasons, riskLevel: polled.riskLevel } : a;
+  };
+
   const statusOf = (a: PreparedAction) => {
     const polled = state?.actions.find((x) => x.id === a.id);
     return {
@@ -178,9 +185,11 @@ export function HomeScreen() {
               <EmergencyCard card={c} />
             ) : c.type === "sources" ? (
               <SourcesCard card={c} />
+            ) : c.type === "coaching" ? (
+              <CoachingCard card={c} />
             ) : (
               <TrustReceipt
-                action={c.action}
+                action={withPolled(c.action)}
                 {...statusOf(c.action)}
                 note={local[c.action.id]?.note}
                 onApprove={() => setPinFor(c.action)}

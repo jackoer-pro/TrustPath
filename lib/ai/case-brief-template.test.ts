@@ -50,3 +50,15 @@ test("injection: blocked action with its origin", () => {
   assert.match(b.summary, /\$500\.00 transfer to J\. Smith was blocked .*simulated compromised agent/);
   assert.match(b.nextStep, /No customer action needed/);
 });
+
+test("scam coaching: evidence quoted in the timeline, safe next step", () => {
+  const b = templateBrief({
+    incident: { type: "scam_coaching", severity: "high", status: "open", title: "Possible scam coaching", description: "d", measures: ["$400.00 to D. Mercer held for review"] },
+    coaching: { assessment: "strong_signs", signals: [{ type: "coached_bank_response", evidence: "If the bank asks, say it's for a car." }], explanation: "This message shows strong signs of scam coaching." },
+    related: [],
+  });
+  assert.match(b.summary, /strong signs/);
+  assert.ok(b.timeline.includes(`Evidence (coached bank response): "If the bank asks, say it's for a car."`));
+  assert.deepEqual(b.measures, ["$400.00 to D. Mercer held for review"]);
+  assert.match(b.nextStep, /never a number from the message/);
+});

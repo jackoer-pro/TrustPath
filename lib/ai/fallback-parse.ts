@@ -1,6 +1,7 @@
 // Rule-based intent parser for the offline assistant. Pure: no DB, no framework imports.
 // It only proposes tool calls; every call still goes through runTool() → Zod → prepareTransfer → trust engine.
 import { normaliseMessages } from "../trust/provenance.ts";
+import { looksPasted } from "./paste.ts";
 
 export type Known = { alias: string; display: string }; // e.g. { alias: "mum", display: "Mum" }
 export type Call =
@@ -10,7 +11,8 @@ export type Call =
   | { name: "prepare_purchase"; args: { productIdOrUrl: string } }
   | { name: "prepare_transfer"; args: { to: string; amount: string; fromAccount?: string } }
   | { name: "report_account_compromise"; args: { customerStatement: string } }
-  | { name: "search_safety_guide"; args: { query: string } };
+  | { name: "search_safety_guide"; args: { query: string } }
+  | { name: "check_message_for_scam_coaching"; args: Record<string, never> };
 export type ParseResult = { calls: Call[]; asks: string[]; wantsLeft: boolean };
 type Msg = { role: "user" | "assistant"; content: string };
 
@@ -70,7 +72,13 @@ export function parseIntents(history: Msg[], known: Known[]): ParseResult {
   const out: ParseResult = { calls: [], asks: [], wantsLeft: false };
   const last = history.at(-1);
   if (!last || last.role !== "user") return out;
-  const text = normaliseMessages([last.content]);
+  // CoachGuard first: a pasted message is checked, never acted on (and never locks the account on its own).
+  if (looksPasted(last.content)) {
+    out.calls.push({ name: "check_message_for_scam_coaching", args: {} });
+    return out;
+  }
+  // "d. mercer" → "d mercer": an initial isn't the end of a sentence.
+  const text = normaliseMessages([last.content]).replace(/\b([a-z])\.\s+(?=[a-z])/g, "$1 ");
   if (COMPROMISE.test(text)) {
     const statement = last.content.trim().slice(0, 1000);
     out.calls.push({ name: "report_account_compromise", args: { customerStatement: statement } });

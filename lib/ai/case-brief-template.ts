@@ -4,10 +4,12 @@ import { formatAUD } from "../money.ts";
 export type CaseBrief = { summary: string; timeline: string[]; measures: string[]; nextStep: string; source: "ai" | "template" };
 
 export type CaseFacts = {
-  incident: { type: "card_fraud" | "account_compromise" | "injection_blocked"; severity: string; status: string; title: string; description: string; measures: string[] };
+  incident: { type: "card_fraud" | "account_compromise" | "injection_blocked" | "scam_coaching"; severity: string; status: string; title: string; description: string; measures: string[] };
   cardEvent?: { merchant: string; amountCents: number; channel: string; decision: string; reasons: string[]; cardAction: string; cardLastFour: string };
   action?: { amountCents: number; to: string; status: string; origin: string; reasons: string[] };
   customerResponse?: "confirmed" | "denied" | null;
+  /** CoachGuard evidence (exact quotes from the message the customer shared) and the deterministic assessment. */
+  coaching?: { assessment: string; signals: { type: string; evidence: string }[]; explanation: string };
   /** Other incidents for the same customer in the last hour, oldest first. */
   related: { type: string; title: string; severity: string }[];
 };
@@ -21,6 +23,8 @@ const NEXT_STEP = {
   account_compromise:
     "Call the customer on their registered number, confirm their identity, reset their credentials, then lift the restrictions once the account is safe.",
   injection_blocked: "No customer action needed. Review the merchant's page content and consider flagging the merchant.",
+  scam_coaching:
+    "Call the customer on their registered number (never a number from the message). Ask who is directing them, explain the coaching signs, and only release a held payment once you're satisfied they aren't being coached.",
 };
 
 export function templateBrief(f: CaseFacts): CaseBrief {
@@ -37,6 +41,11 @@ export function templateBrief(f: CaseFacts): CaseBrief {
     timeline.push("Customer sent \"Was this you?\".");
     if (f.customerResponse) timeline.push(f.customerResponse === "denied" ? "Customer said it wasn't them." : "Customer confirmed the payment.");
     nextStep = NEXT_STEP.card_fraud[f.customerResponse ?? "none"];
+  } else if (i.type === "scam_coaching") {
+    const c = f.coaching;
+    summary = `The customer shared a message that CoachGuard assessed as ${c ? c.assessment.replace("_", " ") : "showing scam-coaching signs"}. ${c?.explanation ?? i.description}`;
+    for (const s of c?.signals ?? []) timeline.push(`Evidence (${s.type.replaceAll("_", " ")}): "${s.evidence}"`);
+    nextStep = NEXT_STEP.scam_coaching;
   } else if (i.type === "account_compromise") {
     summary = `The customer reported a possible account compromise and emergency protection was applied. ${i.description}`;
     timeline.push("Customer reported the compromise in chat; the assistant turned on emergency protection.");
