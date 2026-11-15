@@ -11,7 +11,8 @@ export type AgentResult = { reply: string; cards: ChatCard[]; offline: boolean }
 export const MAX_ROUNDS = 4;
 export const HISTORY_LIMIT = 12;
 
-const CLAIM = /\b(I've|I have|I)\s+(just\s+)?(prepared|set up|queued)\b/i;
+const HIDDEN_NOTE = "The page also had hidden instructions; I ignored them.";
+const CLAIM =/\b(I've|I have|I)\s+(just\s+)?(prepared|set up|queued)\b/i;
 const claimsPrepared = (reply: string) => CLAIM.test(reply);
 const preparedThisTurn = (tools: string[]) => tools.some((t) => t.startsWith("prepare_"));
 const NUDGE =
@@ -68,6 +69,8 @@ export async function runAgent(history: ChatMessage[]): Promise<AgentResult> {
     await audit("ai_agent", "chat.unbacked_claim", "chat", null, { reply: reply.slice(0, 200) });
     return runFallback(recent);
   }
+  // The shield card is shown either way; make sure the reply names it too (the model often leaves it out).
+  if (cards.some((c) => c.type === "shield") && !/hidden instructions/i.test(reply)) reply = `${reply} ${HIDDEN_NOTE}`.trim();
   await audit("ai_agent", "chat.turn", "chat", null, { tools: toolsUsed, cards: cards.length });
   return { reply: reply || "I've prepared that for you to review below.", cards, offline: false };
 }
