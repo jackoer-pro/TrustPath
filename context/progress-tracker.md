@@ -84,6 +84,7 @@ before it's built. What each unit contains and when it counts as done is in
 - [x] 28 CoachGuard (scam-coaching detector; replaces the old 28 + 29)
 - [x] 29 In-app shop and deal finder
 - [x] 30–34 Personal context, AI mandate, Session Trust, "Why?", story slides
+- [x] 35 Morning briefing (spoken); CoachGuard removed from screens
 
 ## Completed
 
@@ -227,6 +228,12 @@ before it's built. What each unit contains and when it counts as done is in
   customer ("Why?") and staff (Session Trust timeline), AFCA opening and
   closing slides. Migration 0003. `npm run eval` 37/37 online and offline.
   See `feature_specs/30-34-personal-context-and-session-trust.md`.
+- **Unit 35 Morning briefing** (Mon 16 Nov): "Good morning" in `/demo` → the
+  phone shows and the computer speaks a briefing from Alex's own data (Mum's
+  birthday, last year's $50, rent before payday, safe-to-spend) → "Send Mum $50"
+  → normal receipt + PIN. CoachGuard removed from screens (the pasted-text
+  safety rule stays). Migration 0004. `npm run eval` 30/30 online and offline.
+  See `feature_specs/35-morning-briefing.md`.
 
 ## In Progress
 

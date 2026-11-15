@@ -1,12 +1,14 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { Volume2, VolumeX } from "lucide-react";
+import { setVoiceEnabled, speak, voiceEnabled } from "./speech";
 import { formatAUD } from "@/lib/money";
 import type { PreparedAction } from "@/lib/banking/actions";
 import type { CustomerState } from "@/lib/banking/state";
 import { AccountSummary } from "./AccountSummary";
 import { AlertBanner } from "./AlertBanner";
-import { CoachingCard } from "./CoachingCard";
+import { BriefingCard } from "./BriefingCard";
 import { DealsCard } from "./DealsCard";
 import { PaydayPlanCard } from "./PaydayPlanCard";
 import { SafeToSpendCard } from "./SafeToSpendCard";
@@ -20,6 +22,7 @@ import { TrustReceipt, type ReceiptStatus } from "./TrustReceipt";
 import { useCustomerState } from "./useCustomerState";
 
 const HISTORY_LIMIT = 12;
+const noopSubscribe = () => () => {};
 const OFFLINE_ERROR = "I couldn't reach the bank just now. Please try again.";
 // Local, not LLM (spec 19): instant, identical online and offline, and sent as history with the next turn.
 const DENIED_REPLY = "Thanks for telling us. I've kept your card locked. Did anything else happen, like someone asking for a code?";
@@ -69,6 +72,25 @@ export function HomeScreen() {
   const [alertBusy, setAlertBusy] = useState(false);
   const [alertError, setAlertError] = useState<string>();
   const inputRef = useRef<HTMLInputElement>(null);
+  const shownBriefings = useRef(new Set<string>());
+  const [voiceTick, setVoiceTick] = useState(0);
+  const voiceOn = useSyncExternalStore(noopSubscribe, voiceEnabled, () => true) && voiceTick >= 0;
+
+  // Morning briefing: when /demo (or a schedule) sends one, show it in the chat once.
+  const briefingNote = state?.notifications.find((n) => n.kind === "briefing");
+  useEffect(() => {
+    if (!briefingNote || shownBriefings.current.has(briefingNote.id)) return;
+    shownBriefings.current.add(briefingNote.id);
+    fetch("/api/briefing", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((b) => {
+        if (!b.ok) return;
+        setMessages((m) => [...m, { id: crypto.randomUUID(), role: "assistant", content: "Here's your briefing for today.", at: new Date().toISOString(), cards: [{ type: "briefing", ...b.data }] }]);
+      })
+      .catch(() => {});
+    // Mark it seen so it isn't shown again after a reload.
+    fetch(`/api/notifications/${briefingNote.id}/respond`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ response: "confirmed" }) }).catch(() => {});
+  }, [briefingNote]);
 
   // Newest unanswered card alert; hidden optimistically once answered (the next poll confirms).
   const alert = state?.notifications.find((n) => (n.kind === "card_alert" || n.kind === "session_alert") && !answered.includes(n.id));
@@ -129,6 +151,7 @@ export function HomeScreen() {
         ? { id: crypto.randomUUID(), role: "assistant", content: body.data.reply, cards: body.data.cards, offline: body.data.offline, at: new Date().toISOString() }
         : { id: crypto.randomUUID(), role: "assistant", content: OFFLINE_ERROR, error: true, at: new Date().toISOString() };
       setMessages((m) => [...m, reply]);
+      if (voiceEnabled() && !reply.error) speak(reply.content);
     } catch {
       setMessages((m) => [...m, { id: crypto.randomUUID(), role: "assistant", content: OFFLINE_ERROR, error: true, at: new Date().toISOString() }]);
     } finally {
@@ -226,8 +249,8 @@ export function HomeScreen() {
               <EmergencyCard card={c} />
             ) : c.type === "sources" ? (
               <SourcesCard card={c} />
-            ) : c.type === "coaching" ? (
-              <CoachingCard card={c} />
+            ) : c.type === "briefing" ? (
+              <BriefingCard card={c} onSend={send} />
             ) : c.type === "deals" ? (
               <DealsCard picks={c.picks} note={c.note} onBuy={buy} safeToSpendCents={c.safeToSpendCents} />
             ) : c.type === "safe_to_spend" ? (
@@ -245,7 +268,25 @@ export function HomeScreen() {
             )
           }
         />
-        <ChatInput disabled={pending} onSend={send} inputRef={inputRef} />
+        <ChatInput
+          disabled={pending}
+          onSend={send}
+          inputRef={inputRef}
+          leading={
+            <button
+              type="button"
+              aria-label={voiceOn ? "Turn spoken replies off" : "Turn spoken replies on"}
+              aria-pressed={voiceOn}
+              onClick={() => {
+                setVoiceEnabled(!voiceOn);
+                setVoiceTick((n) => n + 1);
+              }}
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-navy hover:bg-sunken"
+            >
+              {voiceOn ? <Volume2 className="h-5 w-5" aria-hidden /> : <VolumeX className="h-5 w-5" aria-hidden />}
+            </button>
+          }
+        />
       </section>
 
       <PinDialog

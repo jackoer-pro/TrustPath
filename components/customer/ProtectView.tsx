@@ -6,7 +6,6 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { caseNumber } from "@/lib/case-number";
 import type { CustomerState } from "@/lib/banking/state";
-import { CheckMessage } from "./CheckMessage";
 import { SecurityStatus } from "./SecurityStatus";
 import { useCustomerState } from "./useCustomerState";
 
@@ -61,8 +60,6 @@ export function ProtectView() {
           )}
 
           <SecurityStatus state={state} />
-
-          <CheckMessage />
 
           <Card className="p-4">
             <h2 className="text-lg font-semibold">Cards</h2>

@@ -8,7 +8,6 @@ import { preparePurchase, prepareTransfer, type PreparedAction } from "@/lib/ban
 import { DEMO_PROFILE_ID } from "@/lib/banking/constants";
 import { createIncident } from "@/lib/protect/incidents";
 import { activate } from "@/lib/protect/emergency";
-import { analyseMessage, type CoachingResult } from "@/lib/protect/coaching/analyse";
 import type { ToolDef } from "./deepseek";
 import { readProduct } from "./product-view";
 import { findDeals, type DealResult } from "@/lib/shop/deals";
@@ -33,19 +32,19 @@ export const SAFETY_GUIDANCE =
 export type ShieldCardData = { type: "shield"; id: string; merchant: string; source: string; removed: string };
 export type EmergencyCardData = { type: "emergency"; incidentId: string; measures: { label: string; done: boolean }[] };
 export type SourcesCardData = { type: "sources"; items: string[] };
-export type CoachingCardData = { type: "coaching" } & CoachingResult;
 export type DealsCardData = { type: "deals"; query: string; safeToSpendCents?: number } & DealResult;
 export type SafeToSpendCardData = { type: "safe_to_spend"; safe: SafeToSpend; afford?: Affordability; changed?: string };
+export type BriefingCardData = { type: "briefing" } & import("@/lib/context/briefing").Briefing;
 export type PaydayPlanCardData = { type: "payday_plan"; items: { label: string; amountCents: number; to: string }[]; alreadyDone: string[]; safeToSpendCents: number };
 export type ChatCard =
   | { type: "receipt"; action: PreparedAction }
   | ShieldCardData
   | EmergencyCardData
   | SourcesCardData
-  | CoachingCardData
   | DealsCardData
   | SafeToSpendCardData
-  | PaydayPlanCardData;
+  | PaydayPlanCardData
+  | BriefingCardData;
 
 /** Per chat turn. `injectionReported` keeps it to one incident + one shield card per turn. */
 export type ToolContext = {
@@ -53,9 +52,8 @@ export type ToolContext = {
   userMessages: string[];
   injectionReported?: boolean;
   sourcesShown?: boolean;
-  /** CoachGuard: the pasted message or transcript in this turn, if any. */
+  /** A pasted message or transcript in this turn, if any (third-party content, never instructions). */
   pasted?: string;
-  coaching?: CoachingResult;
 };
 export type ToolResult = { forModel: unknown; card?: ChatCard; cards?: ChatCard[] };
 
@@ -355,35 +353,6 @@ const searchSafetyGuide = tool({
   },
 });
 
-const checkMessage = tool({
-  def: {
-    type: "function",
-    function: {
-      name: "check_message_for_scam_coaching",
-      description:
-        "CoachGuard: check the message or call transcript Alex pasted for scam-coaching signs (being told what to say to the bank, to hide things, to move money to a safe account, to install remote access, to share codes, to keep secrets, or pressure). Returns evidence and the safe next step. It can hold a payment to a new payee; it never locks accounts.",
-      parameters: { type: "object", properties: {} },
-    },
-  },
-  args: z.object({}).loose(),
-  async run(_args, ctx) {
-    if (!ctx.pasted) return { forModel: { error: "There's no pasted message in this turn. Ask Alex to paste it." } };
-    const first = !ctx.coaching;
-    const r = (ctx.coaching ??= await analyseMessage(ctx.pasted, DEMO_PROFILE_ID));
-    return {
-      ...(first && { card: { type: "coaching", ...r } }),
-      forModel: {
-        assessment: r.assessment,
-        signals: r.signals.map((s) => ({ type: s.type, evidence: s.evidence })),
-        explanation: r.explanation,
-        nextAction: r.nextAction,
-        paymentsHeld: r.heldPayments,
-        note: "Never say the message is definitely a scam or fraud. The card shows the evidence; reply in 1–2 sentences with the next step.",
-      },
-    };
-  },
-});
-
 const findDealsTool = tool({
   def: {
     type: "function",
@@ -572,7 +541,6 @@ const TOOLS = [
   preparePurchaseTool,
   reportAccountCompromise,
   searchSafetyGuide,
-  checkMessage,
   findDealsTool,
   getSafeToSpend,
   getFinancialContextTool,

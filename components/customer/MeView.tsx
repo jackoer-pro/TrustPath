@@ -258,10 +258,24 @@ export function MeView() {
                   {y.verified ? "Verified" : "Not verified"} · {y.addedDaysAgo < 7 ? <span className="font-medium text-risk-high">added {y.addedDaysAgo === 0 ? "today" : `${y.addedDaysAgo} day${y.addedDaysAgo === 1 ? "" : "s"} ago`}</span> : `saved ${y.addedDaysAgo} days ago`}
                 </span>
               </p>
-              <label className="flex items-center gap-2 text-sm">
-                <input type="checkbox" checked={y.aiApproved} onChange={(e) => call(`/api/me/payees/${y.id}`, "PATCH", { aiApproved: e.target.checked })} />
-                Allowed
-              </label>
+              <span className="flex flex-col items-end gap-1">
+                <label className="flex items-center gap-2 text-sm">
+                  <input type="checkbox" checked={y.aiApproved} onChange={(e) => call(`/api/me/payees/${y.id}`, "PATCH", { aiApproved: e.target.checked })} />
+                  Allowed
+                </label>
+                {y.kind === "person" && (
+                  <label className="flex items-center gap-1 text-xs text-muted">
+                    Birthday
+                    <input
+                      type="date"
+                      aria-label={`${y.name}'s birthday`}
+                      value={y.birthday ?? ""}
+                      onChange={(e) => call(`/api/me/payees/${y.id}`, "PATCH", { birthday: e.target.value || null })}
+                      className="h-7 rounded border border-line bg-surface px-1 text-xs text-ink"
+                    />
+                  </label>
+                )}
+              </span>
             </li>
           ))}
         </ul>

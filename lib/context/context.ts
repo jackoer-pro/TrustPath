@@ -8,6 +8,7 @@ import { formatAUD } from "@/lib/money";
 import { DEMO_PROFILE_ID, EVERYDAY_ACCOUNT_ID } from "@/lib/banking/constants";
 import { prepareTransfer, type PreparedAction } from "@/lib/banking/actions";
 import { safeToSpend, type ItemStatus, type SafeToSpend } from "./safe-to-spend";
+import { buildBriefing } from "./briefing";
 
 export type Preferences = {
   nextPayday: string;
@@ -32,7 +33,7 @@ export type FinancialContext = {
   commitments: CommitmentView[];
   savings: { accountId: string; accountName: string; targetCents: number; status: ItemStatus } | null;
   accounts: { id: string; name: string; kind: string; balanceCents: number }[];
-  payees: { id: string; name: string; kind: string; verified: boolean; aiApproved: boolean; addedDaysAgo: number }[];
+  payees: { id: string; name: string; kind: string; verified: boolean; aiApproved: boolean; addedDaysAgo: number; birthday: string | null }[];
   cycleStart: string;
   safe: SafeToSpend;
 };
@@ -45,7 +46,7 @@ export async function getFinancialContext(profileId = DEMO_PROFILE_ID): Promise<
     sb.from("customer_preferences").select("*").eq("profile_id", profileId).single(),
     sb.from("commitments").select("*").eq("profile_id", profileId).order("amount_cents", { ascending: false }),
     sb.from("accounts").select("id, name, kind, balance_cents").eq("profile_id", profileId).order("name"),
-    sb.from("payees").select("id, name, kind, verified, ai_approved, created_at").eq("profile_id", profileId).order("name"),
+    sb.from("payees").select("id, name, kind, verified, ai_approved, created_at, birthday").eq("profile_id", profileId).order("name"),
     sb
       .from("pending_actions")
       .select("id, amount_cents, payee_id, to_account_id")
@@ -76,6 +77,7 @@ export async function getFinancialContext(profileId = DEMO_PROFILE_ID): Promise<
     verified: y.verified as boolean,
     aiApproved: y.ai_approved as boolean,
     addedDaysAgo: Math.floor((Date.now() - Date.parse(y.created_at)) / DAY),
+    birthday: (y.birthday as string | null) ?? null,
   }));
   const used = new Set<string>();
   const statusOf = (counterparty: string | null, match: (a: { payee_id: string | null; to_account_id: string | null }) => boolean, amount: number): ItemStatus => {
@@ -230,3 +232,58 @@ export const describeSavings = (ctx: FinancialContext) =>
   ctx.savings
     ? `You set a savings goal of ${formatAUD(ctx.savings.targetCents)} into ${ctx.savings.accountName} every payday. You can change or remove it in My Financial Context.`
     : "You haven't set a savings goal.";
+
+// ─── Morning briefing (Unit 35) ───
+
+const SYDNEY = "Australia/Sydney";
+const sydneyDate = (d = new Date()) => new Intl.DateTimeFormat("en-CA", { timeZone: SYDNEY, year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
+const sydneyHour = (d = new Date()) => Number(new Intl.DateTimeFormat("en-AU", { timeZone: SYDNEY, hour: "numeric", hourCycle: "h23" }).format(d));
+
+/** The briefing, from the customer's own context: birthdays saved on payees, last year's gift, what's due, safe-to-spend. */
+export async function getBriefing() {
+  const sb = db();
+  const [ctx, payees] = await Promise.all([
+    getFinancialContext(),
+    sb.from("payees").select("name, aliases, birthday").eq("profile_id", DEMO_PROFILE_ID).not("birthday", "is", null),
+  ]);
+  if (payees.error) throw payees.error;
+  const today = sydneyDate().slice(5); // MM-DD
+  const birthdaysToday = [];
+  for (const p of payees.data.filter((y) => String(y.birthday).slice(5) === today)) {
+    // What Alex sent on this person's last birthday (300–430 days ago), from real history.
+    const { data: gifts, error } = await sb
+      .from("transactions")
+      .select("amount_cents")
+      .eq("account_id", EVERYDAY_ACCOUNT_ID)
+      .eq("counterparty", p.name)
+      .lt("amount_cents", 0)
+      .gte("created_at", new Date(Date.now() - 430 * DAY).toISOString())
+      .lte("created_at", new Date(Date.now() - 300 * DAY).toISOString())
+      .limit(1);
+    if (error) throw error;
+    const alias = ((p.aliases as string[])[0] ?? p.name) as string;
+    const family = ["mum", "mom", "dad"].includes(alias);
+    birthdaysToday.push({
+      display: family ? alias.charAt(0).toUpperCase() + alias.slice(1) : (p.name as string),
+      payeeAlias: alias,
+      pronoun: (alias === "dad" ? "him" : family ? "her" : "them") as "her" | "him" | "them",
+      lastGiftCents: gifts[0] ? -Number(gifts[0].amount_cents) : null,
+    });
+  }
+  return buildBriefing({
+    name: "Alex",
+    hour: sydneyHour(),
+    birthdaysToday,
+    dueBeforePayday: ctx.commitments.filter((c) => c.status === "due" && c.payeeName).map((c) => ({ name: c.name, amountCents: c.amountCents })),
+    nextPayday: ctx.preferences.nextPayday,
+    safeToSpendCents: ctx.safe.amountCents,
+  });
+}
+
+export async function setPayeeBirthday(id: string, birthday: string | null) {
+  const { data, error } = await db().from("payees").update({ birthday }).eq("id", id).eq("profile_id", DEMO_PROFILE_ID).select("name");
+  if (error) throw error;
+  if (!data.length) throw new AppError("NOT_FOUND", "Payee not found.", 404);
+  await audit("customer", "payee.birthday_set", "payee", id, { name: data[0].name, birthday });
+  return getFinancialContext();
+}
