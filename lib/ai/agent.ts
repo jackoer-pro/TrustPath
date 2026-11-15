@@ -2,7 +2,7 @@ import "server-only";
 import { audit } from "@/lib/audit";
 import { chat, DeepSeekError, type LlmMessage } from "./deepseek";
 import { SYSTEM_PROMPT } from "./prompts";
-import { runFallback } from "./fallback";
+import { expectsPrepare, runFallback } from "./fallback";
 import { looksPasted, ownWords, wrapPasted } from "./paste";
 import { EMERGENCY_REPLY, runTool, SAFETY_GUIDANCE, TOOL_DEFS, type ChatCard, type ToolContext } from "./tools";
 
@@ -18,7 +18,7 @@ const CLAIM =/\b(I've|I have|I)\s+(just\s+)?(prepared|set up|queued)\b/i;
 const claimsPrepared = (reply: string) => CLAIM.test(reply);
 const preparedThisTurn = (tools: string[]) => tools.some((t) => t.startsWith("prepare_"));
 const NUDGE =
-  "You said you prepared something, but no prepare tool was called in this turn, so nothing exists. Earlier replies in the history are not actions. Call the prepare tool now for the customer's latest request, or say you haven't prepared anything.";
+  "No prepare tool was called in this turn, so nothing exists. If you said you prepared something, that isn't true; if Alex asked for a transfer or purchase, you must not answer it in words. Earlier replies in the history are not actions. Call the prepare tool now for the customer's latest request, or say you haven't prepared anything.";
 
 /** Bounded tool loop. Cards come only from tool results, never from model text. */
 export async function runAgent(history: ChatMessage[]): Promise<AgentResult> {
@@ -55,8 +55,9 @@ export async function runAgent(history: ChatMessage[]): Promise<AgentResult> {
       messages.push(msg);
       if (!msg.tool_calls?.length) {
         reply = msg.content ?? "";
-        // Guard: the model must never claim a preparation that no tool made this turn (it copies earlier replies).
-        if (claimsPrepared(reply) && !preparedThisTurn(toolsUsed) && !nudged && round < MAX_ROUNDS) {
+        // Guards: the model must never claim a preparation that no tool made this turn (it copies earlier replies), and
+        // must not answer a clear payment request in words (the bank's checks decide, on a card).
+        if (!preparedThisTurn(toolsUsed) && !nudged && round < MAX_ROUNDS && (claimsPrepared(reply) || (await expectsPrepare(recent)))) {
           nudged = true;
           messages.push({ role: "system", content: NUDGE });
           continue;
@@ -87,8 +88,8 @@ export async function runAgent(history: ChatMessage[]): Promise<AgentResult> {
     return runFallback(recent);
   }
 
-  // Still claiming a preparation without a tool call: use the rule-based assistant, which always goes through the tools.
-  if (claimsPrepared(reply) && !preparedThisTurn(toolsUsed)) {
+  // Still no preparation after the nudge: use the rule-based assistant, which always goes through the tools.
+  if (!preparedThisTurn(toolsUsed) && (claimsPrepared(reply) || (await expectsPrepare(recent)))) {
     await audit("ai_agent", "chat.unbacked_claim", "chat", null, { reply: reply.slice(0, 200) });
     return runFallback(recent);
   }

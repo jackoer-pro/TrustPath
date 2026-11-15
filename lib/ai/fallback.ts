@@ -42,6 +42,12 @@ type ErrorOut = { error: string };
 type SafetyOut = { results: { content: string }[]; latestBlocked: { status: string; amount: string; to?: string; reasons: string[] } | null };
 
 /** Rule-based stand-in for the LLM: same tools, same trust engine, templated reply. */
+/** True when the rule-based parser reads the latest message as a clear transfer or purchase request. */
+export async function expectsPrepare(history: ChatMessage[]): Promise<boolean> {
+  const calls = parseIntents(history, await knownRecipients()).calls;
+  return calls.some((c) => c.name === "prepare_transfer" || c.name === "prepare_purchase" || c.name === "buy_named_product");
+}
+
 export async function runFallback(history: ChatMessage[]): Promise<AgentResult> {
   const parsed = parseIntents(history, await knownRecipients());
   const last = history.at(-1);
