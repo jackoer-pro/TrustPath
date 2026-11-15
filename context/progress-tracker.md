@@ -8,14 +8,15 @@ Update this file after every meaningful implementation change.
   **Act 1 passes end to end on the public URL.** Units 13–16 done;
   **golden-path steps 1–7 pass online and offline**, and the hijack block is
   demoable on demand. Units 17–18 done; **golden-path step 10 works
-  through the API.** Phase C complete: Units 19–26 done; **the whole golden
-  path (steps 1–19) runs from `/demo`, online and offline.** Unit 27
-  (rehearsal) spec drafted, awaiting clarification.
+  through the API.** Phases A–D complete: Units 01–27 done. **The whole golden
+  path runs from `/demo`, and all 15 evaluation cases pass online and
+  offline** (`npm run eval`). Only stretch Units 28–29 remain.
 
 ## Current Goal
 
 - Answer the "Clarify before building" questions in
-  `context/feature_specs/27-rehearsal.md`, then run Unit 27.
+  the stretch units (28–29) if time allows; otherwise film with
+  `context/demo-script.md`.
 
 ## Schedule
 
@@ -75,7 +76,7 @@ before it's built. What each unit contains and when it counts as done is in
 
 **Phase D — Rehearsal**
 
-- [ ] 27 Rehearsal and polish (feature freeze 12:00pm Tue 17 Nov) — spec drafted
+- [x] 27 Rehearsal and polish (feature freeze 12:00pm Tue 17 Nov)
 
 **Stretch (only if 27 is done)**
 
@@ -202,6 +203,11 @@ before it's built. What each unit contains and when it counts as done is in
   reset that reloads both panes (about 0.2 s). Operator script in
   `context/demo-script.md`. **Steps 1–19 run from `/demo`.** See
   `feature_specs/26-demo-harness.md` → Built.
+- **Unit 27 Rehearsal and polish** (Sun 15 Nov): `npm run eval` (15 cases),
+  prompt fixes for unknown recipients and the hidden-instruction sentence,
+  and a deterministic guard against "I've prepared…" claims with no tool
+  call (found during rehearsal). Keyboard, reduced-motion and bundle-secret
+  checks pass. See `feature_specs/27-rehearsal.md` → Built.
 
 ## In Progress
 
@@ -209,10 +215,10 @@ before it's built. What each unit contains and when it counts as done is in
 
 ## Next Up
 
-- Developer answers the questions in `27-rehearsal.md`.
+- Film with `context/demo-script.md`; re-run `npm run eval -- https://trust-path-five.vercel.app` before each filming session.
 - Developer: set Vercel `DEMO_ADMIN_KEY` to the generated production key and
   redeploy (see `12-first-deploy.md` → Built).
-- Run Unit 27, tick it above; then the stretch units (28–29) only if time allows.
+- Stretch Units 28–29 only if time allows (each needs its own spec).
 
 ## Open Questions
 
