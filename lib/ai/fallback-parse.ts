@@ -8,7 +8,8 @@ export type Call =
   | { name: "get_recent_transactions"; args: { limit: number } }
   | { name: "view_product"; args: { productIdOrUrl: string } }
   | { name: "prepare_purchase"; args: { productIdOrUrl: string } }
-  | { name: "prepare_transfer"; args: { to: string; amount: string; fromAccount?: string } };
+  | { name: "prepare_transfer"; args: { to: string; amount: string; fromAccount?: string } }
+  | { name: "report_account_compromise"; args: { customerStatement: string } };
 export type ParseResult = { calls: Call[]; asks: string[]; wantsLeft: boolean };
 type Msg = { role: "user" | "assistant"; content: string };
 
@@ -17,6 +18,8 @@ const LONE_AMOUNT = /^\s*\$?(\d{1,3}(?:,\d{3})+|\d+)(\.\d{1,2})?\s*(dollars|buck
 const MOVE = /\b(move|transfer|put|send|pay|give)\b/;
 const FROM = /\bfrom\s+(?:my\s+)?([a-z ]+?)(?:\s+account)?(?=$|[,.!?]|\s+(?:to|into)\b)/;
 const TRAILING = /\s+(urgently|now|please|today|asap|right away)$/;
+/** Scam / compromise reports: protection comes first, so nothing else in the message is parsed. */
+const COMPROMISE = /\b(scammed|hacked|security code|protect my (money|account)|wasn['’]t me|was not me|gave [^.]*\b(code|password|pin|card details))\b/;
 const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 /** Commas/periods between digits stay ("$1,500", "120.50"); everything else separates clauses. */
@@ -65,6 +68,10 @@ export function parseIntents(history: Msg[], known: Known[]): ParseResult {
   const last = history.at(-1);
   if (!last || last.role !== "user") return out;
   const text = normaliseMessages([last.content]);
+  if (COMPROMISE.test(text)) {
+    out.calls.push({ name: "report_account_compromise", args: { customerStatement: last.content.trim().slice(0, 1000) } });
+    return out;
+  }
 
   // "$200" after "How much would you like to send Mum?" → recipient from the previous customer message.
   const prevAssistant = history.at(-2);

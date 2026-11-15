@@ -89,7 +89,7 @@ export function ChatThread({
                 </span>
               )}
             </AssistantBubble>
-            {m.cards?.map((c) => <div key={c.type === "receipt" ? c.action.id : c.id}>{renderCard(c)}</div>)}
+            {m.cards?.map((c, i) => <div key={i}>{renderCard(c)}</div>)}
           </div>
         ),
       )}

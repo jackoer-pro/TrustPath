@@ -6,7 +6,7 @@ import { DEMO_PROFILE_ID } from "@/lib/banking/constants";
 import type { PreparedAction } from "@/lib/banking/actions";
 import type { ChatCard } from "./tools";
 import { parseIntents, type Known } from "./fallback-parse";
-import { runTool } from "./tools";
+import { EMERGENCY_REPLY, runTool } from "./tools";
 import type { AgentResult, ChatMessage } from "./agent";
 
 export const OFFLINE_HELP =
@@ -62,6 +62,9 @@ export async function runFallback(history: ChatMessage[]): Promise<AgentResult> 
     } else if (call.name === "view_product") {
       const p = r.forModel as ProductOut;
       reads.push(`I read the ${p.merchant} page for the ${p.name} (${p.price}).${p.notice ? " It contained hidden instructions, which I ignored." : ""}`);
+      if (r.card) cards.push(r.card);
+    } else if (call.name === "report_account_compromise") {
+      sentences.push(EMERGENCY_REPLY);
       if (r.card) cards.push(r.card);
     } else if (r.card?.type === "receipt") {
       cards.push(r.card);
