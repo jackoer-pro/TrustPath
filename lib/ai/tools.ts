@@ -14,6 +14,9 @@ import { readProduct } from "./product-view";
 import { findDeals, type DealResult } from "@/lib/shop/deals";
 import { searchSafety } from "./knowledge";
 import { scan } from "@/lib/trust/content-scanner";
+import { amountMentioned, normaliseMessages } from "@/lib/trust/provenance";
+import { describeSavings, getFinancialContext, preparePaydayPlan, updatePreferences } from "@/lib/context/context";
+import { canAfford, type Affordability, type SafeToSpend } from "@/lib/context/safe-to-spend";
 
 // The complete tool list (architecture.md → AI Model). Read, prepare and protect only:
 // no tool may approve, execute, unlock or change rules (invariant 1). The one protect
@@ -31,14 +34,18 @@ export type ShieldCardData = { type: "shield"; id: string; merchant: string; sou
 export type EmergencyCardData = { type: "emergency"; incidentId: string; measures: { label: string; done: boolean }[] };
 export type SourcesCardData = { type: "sources"; items: string[] };
 export type CoachingCardData = { type: "coaching" } & CoachingResult;
-export type DealsCardData = { type: "deals"; query: string } & DealResult;
+export type DealsCardData = { type: "deals"; query: string; safeToSpendCents?: number } & DealResult;
+export type SafeToSpendCardData = { type: "safe_to_spend"; safe: SafeToSpend; afford?: Affordability; changed?: string };
+export type PaydayPlanCardData = { type: "payday_plan"; items: { label: string; amountCents: number; to: string }[]; alreadyDone: string[]; safeToSpendCents: number };
 export type ChatCard =
   | { type: "receipt"; action: PreparedAction }
   | ShieldCardData
   | EmergencyCardData
   | SourcesCardData
   | CoachingCardData
-  | DealsCardData;
+  | DealsCardData
+  | SafeToSpendCardData
+  | PaydayPlanCardData;
 
 /** Per chat turn. `injectionReported` keeps it to one incident + one shield card per turn. */
 export type ToolContext = {
@@ -50,7 +57,7 @@ export type ToolContext = {
   pasted?: string;
   coaching?: CoachingResult;
 };
-export type ToolResult = { forModel: unknown; card?: ChatCard };
+export type ToolResult = { forModel: unknown; card?: ChatCard; cards?: ChatCard[] };
 
 type Tool<S extends z.ZodType> = {
   def: ToolDef;
@@ -403,13 +410,155 @@ const findDealsTool = tool({
       budget = undefined;
     }
     const r = findDeals(query, budget);
+    // Personal context: every pick is checked against what Alex can safely spend until payday.
+    const safe = (await getFinancialContext()).safe;
     return {
-      ...(r.picks.length > 0 && { card: { type: "deals", query, ...r } }),
+      ...(r.picks.length > 0 && { card: { type: "deals", query, safeToSpendCents: safe.amountCents, ...r } }),
       forModel: {
-        picks: r.picks.map((p) => ({ badge: p.badge, product: p.name, merchant: p.merchant, price: formatAUD(p.priceCents), why: p.why })),
+        safeToSpendUntilPayday: formatAUD(safe.amountCents),
+        picks: r.picks.map((p) => ({
+          badge: p.badge,
+          product: p.name,
+          merchant: p.merchant,
+          price: formatAUD(p.priceCents),
+          why: p.why,
+          fitsSafeToSpend: canAfford(safe, p.priceCents).sentence,
+        })),
         note: r.note,
         howToBuy: "Alex taps Buy on the card (or names the product). Every purchase still needs a Trust Receipt and PIN. Don't prepare a purchase unless Alex asks.",
       },
+    };
+  },
+});
+
+const getSafeToSpend = tool({
+  def: {
+    type: "function",
+    function: {
+      name: "get_safe_to_spend",
+      description:
+        "Alex's personalised safe-to-spend until payday, calculated by the bank from Alex's balance, commitments, savings goal and minimum buffer, with the breakdown. Pass amount to check whether something is affordable. Never calculate it yourself.",
+      parameters: {
+        type: "object",
+        properties: { amount: { type: "string", description: 'Only for "can I afford …": the price Alex said, e.g. "280".' } },
+      },
+    },
+  },
+  args: z.object({ amount: z.union([z.string().trim().max(20), z.number().positive()]).optional() }),
+  async run({ amount }) {
+    const { safe } = await getFinancialContext();
+    let afford: Affordability | undefined;
+    if (amount !== undefined) {
+      try {
+        afford = canAfford(safe, toCents(amount));
+      } catch {
+        return { forModel: { error: `"${amount}" isn't an amount.` } };
+      }
+    }
+    return {
+      card: { type: "safe_to_spend", safe, ...(afford && { afford }) },
+      forModel: {
+        safeToSpend: formatAUD(safe.amountCents),
+        explanation: safe.explanation,
+        breakdown: safe.lines.map((l) => `${l.label}: ${l.cents < 0 ? "−" : ""}${formatAUD(Math.abs(l.cents))}${l.note ? ` (${l.note})` : ""}`),
+        ...(afford && { affordability: afford.sentence }),
+      },
+    };
+  },
+});
+
+const getFinancialContextTool = tool({
+  def: {
+    type: "function",
+    function: {
+      name: "get_financial_context",
+      description:
+        "Alex's own financial context: next payday, expected income, commitments (rent, bills, subscriptions), savings goal, minimum buffer and preferred savings account. Use it to answer questions like 'why do you recommend saving $300?'.",
+      parameters: { type: "object", properties: {} },
+    },
+  },
+  args: z.object({}).loose(),
+  async run() {
+    const ctx = await getFinancialContext();
+    return {
+      forModel: {
+        nextPayday: ctx.preferences.nextPayday,
+        expectedIncome: formatAUD(ctx.preferences.expectedIncomeCents),
+        commitments: ctx.commitments.map((c) => ({ name: c.name, amount: formatAUD(c.amountCents), payee: c.payeeName, inPaydayPlan: c.inPaydayPlan, status: c.status })),
+        savingsGoal: describeSavings(ctx),
+        minimumBuffer: formatAUD(ctx.preferences.minBufferCents),
+        note: "These are settings Alex chose. Say so, and that Alex can change them in My Financial Context.",
+      },
+    };
+  },
+});
+
+const preparePaydayPlanTool = tool({
+  def: {
+    type: "function",
+    function: {
+      name: "prepare_payday_plan",
+      description:
+        "Prepare (not send) Alex's usual payday plan from Alex's saved context: each planned bill and the savings goal still due this pay cycle, as separate Trust Receipts. Use when Alex asks for their usual payday plan.",
+      parameters: { type: "object", properties: {} },
+    },
+  },
+  args: z.object({}).loose(),
+  async run(_args, ctx) {
+    // The saved plan is the intent record, but only when Alex asks for it in their own words.
+    if (!/\b(payday|usual|plan)\b/i.test(ctx.userMessages.at(-1) ?? ""))
+      return { forModel: { error: "Only prepare the payday plan when Alex asks for it." } };
+    const plan = await preparePaydayPlan(ctx.userMessages);
+    const { safe } = await getFinancialContext();
+    return {
+      card: { type: "payday_plan", items: plan.items, alreadyDone: plan.alreadyDone, safeToSpendCents: safe.amountCents },
+      cards: plan.actions.map((action) => ({ type: "receipt" as const, action })),
+      forModel: {
+        prepared: plan.actions.map((a) => ({ to: a.toName, amount: formatAUD(a.amountCents), status: a.status, reasons: a.reasons })),
+        alreadyDone: plan.alreadyDone,
+        safeToSpendAfter: formatAUD(safe.amountCents),
+        note: "Safe-to-spend doesn't change: these were already counted. Say the plan in one sentence and quote safeToSpendAfter.",
+      },
+    };
+  },
+});
+
+const updatePreference = tool({
+  def: {
+    type: "function",
+    function: {
+      name: "update_financial_preference",
+      description:
+        "Change Alex's minimum buffer or savings goal when Alex asks, to the amount Alex said. Can't change AI permissions, limits, recipients or security settings.",
+      parameters: {
+        type: "object",
+        properties: {
+          setting: { type: "string", enum: ["min_buffer", "savings_target"] },
+          amount: { type: "string", description: 'The amount Alex said, e.g. "300".' },
+        },
+        required: ["setting", "amount"],
+      },
+    },
+  },
+  args: z.object({ setting: z.enum(["min_buffer", "savings_target"]), amount: z.union([z.string().trim().max(20), z.number().nonnegative()]) }),
+  async run({ setting, amount }, ctx) {
+    let cents: number;
+    try {
+      cents = toCents(amount);
+    } catch {
+      return { forModel: { error: `"${amount}" isn't an amount.` } };
+    }
+    // Only on Alex's own words in this message (pasted text never counts).
+    if (!amountMentioned(cents, normaliseMessages([ctx.userMessages.at(-1) ?? ""])))
+      return { forModel: { error: "Alex didn't say that amount. Ask Alex what amount they want." } };
+    const before = await getFinancialContext();
+    const ctxAfter = await updatePreferences(setting === "min_buffer" ? { minBufferCents: cents } : { savingsTargetCents: cents }, "ai_agent");
+    const label = setting === "min_buffer" ? "Minimum buffer" : "Savings goal";
+    const old = setting === "min_buffer" ? before.preferences.minBufferCents : before.preferences.savingsTargetCents;
+    const changed = `${label}: ${formatAUD(old)} → ${formatAUD(cents)}`;
+    return {
+      card: { type: "safe_to_spend", safe: ctxAfter.safe, changed },
+      forModel: { changed, safeToSpendNow: formatAUD(ctxAfter.safe.amountCents), safeToSpendBefore: formatAUD(before.safe.amountCents) },
     };
   },
 });
@@ -425,6 +574,10 @@ const TOOLS = [
   searchSafetyGuide,
   checkMessage,
   findDealsTool,
+  getSafeToSpend,
+  getFinancialContextTool,
+  preparePaydayPlanTool,
+  updatePreference,
 ];
 export const TOOL_DEFS: ToolDef[] = TOOLS.map((t) => t.def);
 

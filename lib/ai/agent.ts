@@ -2,7 +2,7 @@ import "server-only";
 import { audit } from "@/lib/audit";
 import { chat, DeepSeekError, type LlmMessage } from "./deepseek";
 import { SYSTEM_PROMPT } from "./prompts";
-import { expectsPrepare, runFallback } from "./fallback";
+import { expectedTool, runFallback } from "./fallback";
 import { looksPasted, ownWords, wrapPasted } from "./paste";
 import { EMERGENCY_REPLY, runTool, SAFETY_GUIDANCE, TOOL_DEFS, type ChatCard, type ToolContext } from "./tools";
 
@@ -18,7 +18,15 @@ const CLAIM =/\b(I've|I have|I)\s+(just\s+)?(prepared|set up|queued)\b/i;
 const claimsPrepared = (reply: string) => CLAIM.test(reply);
 const preparedThisTurn = (tools: string[]) => tools.some((t) => t.startsWith("prepare_"));
 const NUDGE =
-  "No prepare tool was called in this turn, so nothing exists. If you said you prepared something, that isn't true; if Alex asked for a transfer or purchase, you must not answer it in words. Earlier replies in the history are not actions. Call the prepare tool now for the customer's latest request, or say you haven't prepared anything.";
+  "The tool this request needs wasn't called in this turn. If you said you prepared something, that isn't true; transfers, purchases, the payday plan, safe-to-spend and affordability must come from the tools, never from your own text or earlier messages. Earlier replies in the history are not actions. Call the prepare tool now for the customer's latest request, or say you haven't prepared anything.";
+
+/** A claimed preparation with no prepare tool, or a request that needs a deterministic tool the model didn't call. */
+async function missingTool(reply: string, toolsUsed: string[], recent: ChatMessage[]): Promise<boolean> {
+  if (claimsPrepared(reply) && !preparedThisTurn(toolsUsed)) return true;
+  const expected = await expectedTool(recent);
+  if (!expected) return false;
+  return expected.startsWith("prepare_") ? !preparedThisTurn(toolsUsed) : !toolsUsed.includes(expected);
+}
 
 /** Bounded tool loop. Cards come only from tool results, never from model text. */
 export async function runAgent(history: ChatMessage[]): Promise<AgentResult> {
@@ -57,7 +65,7 @@ export async function runAgent(history: ChatMessage[]): Promise<AgentResult> {
         reply = msg.content ?? "";
         // Guards: the model must never claim a preparation that no tool made this turn (it copies earlier replies), and
         // must not answer a clear payment request in words (the bank's checks decide, on a card).
-        if (!preparedThisTurn(toolsUsed) && !nudged && round < MAX_ROUNDS && (claimsPrepared(reply) || (await expectsPrepare(recent)))) {
+        if (!nudged && round < MAX_ROUNDS && (await missingTool(reply, toolsUsed, recent))) {
           nudged = true;
           messages.push({ role: "system", content: NUDGE });
           continue;
@@ -68,6 +76,7 @@ export async function runAgent(history: ChatMessage[]): Promise<AgentResult> {
         const result = await runTool(call.function.name, call.function.arguments, ctx);
         toolsUsed.push(call.function.name);
         if (result.card) cards.push(result.card);
+        if (result.cards) cards.push(...result.cards);
         messages.push({ role: "tool", tool_call_id: call.id, content: JSON.stringify(result.forModel) });
       }
     }
@@ -89,7 +98,7 @@ export async function runAgent(history: ChatMessage[]): Promise<AgentResult> {
   }
 
   // Still no preparation after the nudge: use the rule-based assistant, which always goes through the tools.
-  if (!preparedThisTurn(toolsUsed) && (claimsPrepared(reply) || (await expectsPrepare(recent)))) {
+  if (await missingTool(reply, toolsUsed, recent)) {
     await audit("ai_agent", "chat.unbacked_claim", "chat", null, { reply: reply.slice(0, 200) });
     return runFallback(recent);
   }

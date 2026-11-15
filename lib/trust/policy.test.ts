@@ -10,9 +10,11 @@ const base: PolicyContext = {
   provenance: ok,
 };
 const transfer = (amountCents: number) => ({ type: "transfer" as const, amountCents });
+// The original four fields (rules and sessionSignals were added later for the decision trace).
+const core = ({ decision, riskLevel, reasons, flags }: ReturnType<typeof assess>) => ({ decision, riskLevel, reasons, flags });
 
 test("default: step_up, low, no reasons", () => {
-  assert.deepEqual(assess(transfer(12000), base), { decision: "step_up", riskLevel: "low", reasons: [], flags: [] });
+  assert.deepEqual(core(assess(transfer(12000), base)), { decision: "step_up", riskLevel: "low", reasons: [], flags: [] });
 });
 
 test("golden path Act 1: $300 to savings and $120 electricity are low risk", () => {
@@ -74,7 +76,7 @@ test("R4 purchase with a locked card blocks", () => {
 
 test("R5 insufficient funds blocks, medium (own transfer, so no R6)", () => {
   const r = assess(transfer(200000), { ...base, recipient: { kind: "own_account", verified: true } });
-  assert.deepEqual(r, { decision: "block", riskLevel: "medium", reasons: ["There isn't enough money in that account."], flags: [] });
+  assert.deepEqual(core(r), { decision: "block", riskLevel: "medium", reasons: ["There isn't enough money in that account."], flags: [] });
 });
 
 test("R6 large amount holds: over $2,000 or over half the balance", () => {
@@ -93,7 +95,7 @@ test("R6 skips own-account transfers", () => {
 
 test("R7 unverified payee: step_up, medium warning", () => {
   const r = assess(transfer(5000), { ...base, recipient: { kind: "person", verified: false } });
-  assert.deepEqual(r, { decision: "step_up", riskLevel: "medium", reasons: ["This payee hasn't been verified yet."], flags: [] });
+  assert.deepEqual(core(r), { decision: "step_up", riskLevel: "medium", reasons: ["This payee hasn't been verified yet."], flags: [] });
 });
 
 test("R8 CoachGuard: strong coaching + payee added yesterday → hold, high, exact reason", () => {
@@ -122,4 +124,48 @@ test("R8: unknown recipient stays blocked (R3 wins) but the coaching reason is s
   const r = assess({ type: "transfer", amountCents: 40000 }, { ...base, recipient: null, coaching: { strong: true, summary: "x" } });
   assert.equal(r.decision, "block");
   assert.ok(r.reasons.some((x) => x.startsWith("Possible scam coaching")));
+});
+
+test("R9 mandate: over the AI limit or an un-allowed payee → block; customer taps are exempt", () => {
+  const over = assess(transfer(120000), { ...base, mandate: { agent: true, maxPrepareCents: 100000, recipientApproved: true } });
+  assert.equal(over.decision, "block");
+  assert.ok(over.reasons.some((r) => r.startsWith("This is above the $1,000.00 limit you set for your assistant.")));
+  assert.equal(over.rules.find((r) => r.id === "R9")?.decision, "block");
+  const notAllowed = assess(transfer(5000), { ...base, mandate: { agent: true, maxPrepareCents: 100000, recipientApproved: false } });
+  assert.ok(notAllowed.reasons.includes("You haven't allowed your assistant to pay this payee. You can change that in My AI Permissions."));
+  const tap = assess(transfer(120000), { ...base, mandate: { agent: false, maxPrepareCents: 100000, recipientApproved: false } });
+  assert.ok(!tap.rules.some((r) => r.id === "R9"));
+});
+
+test("R9 buffer: dropping below the minimum buffer → extra check (step_up), not a block", () => {
+  const r = assess(transfer(140000), { ...base, buffer: { bufferCents: 20000, balanceAfterCents: 10000 } });
+  assert.ok(r.reasons.includes("This would leave $100.00 in the account, below your $200.00 minimum buffer."));
+  assert.equal(r.rules.find((x) => x.id === "R9")?.decision, "step_up");
+});
+
+test("R10 unfamiliar-device attack: $2,500 to a payee added yesterday from a new device → hold with every signal", () => {
+  const r = assess(transfer(250000), {
+    ...base,
+    sourceBalanceCents: 420000,
+    recipient: { kind: "person", verified: false, addedDaysAgo: 1 },
+    session: { deviceKnown: false, newSession: true, label: "Android phone · Melbourne (simulated)" },
+    usualMaxCents: 50000,
+  });
+  assert.equal(r.decision, "hold");
+  const reason = r.rules.find((x) => x.id === "R10")!.reason;
+  assert.match(reason, /^Unusual sign-in activity: a device we don't recognise \(Android phone · Melbourne \(simulated\)\), a brand-new sign-in, a payee added 1 day ago and 5× your usual largest payment of \$500\.00\./);
+  assert.doesNotMatch(reason, /fraudster|criminal|hacker|not you/i, "never claims who is using the device");
+  assert.equal(r.sessionSignals.length, 4);
+});
+
+test("R10 proportionate: an unfamiliar device alone → extra check only; a known device → nothing; emergency still wins", () => {
+  const dev = { deviceKnown: false, newSession: false, label: "Laptop" };
+  const alone = assess(transfer(5000), { ...base, session: dev, usualMaxCents: 50000 });
+  assert.equal(alone.decision, "step_up");
+  assert.match(alone.reasons.at(-1)!, /^Extra check needed: a device we don't recognise \(Laptop\)\.$/);
+  const known = assess(transfer(5000), { ...base, session: { deviceKnown: true, newSession: false, label: "Alex's iPhone" }, usualMaxCents: 50000 });
+  assert.deepEqual(known.sessionSignals, []);
+  const paused = assess(transfer(250000), { ...base, outgoingPaused: true, session: { ...dev, newSession: true }, recipient: { kind: "person", verified: false, addedDaysAgo: 1 }, usualMaxCents: 50000 });
+  assert.equal(paused.decision, "block");
+  assert.equal(paused.rules[0].id, "R1");
 });

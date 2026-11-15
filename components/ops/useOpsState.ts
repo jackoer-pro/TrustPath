@@ -21,7 +21,7 @@ export function useOpsState() {
         if (!alive) return;
         if (!body.ok) return setError(true);
         const state = body.data as OpsState;
-        const ids = [...state.cardEvents, ...state.incidents, ...state.audit].map((x) => x.id);
+        const ids = [...state.cardEvents, ...state.incidents, ...state.audit, ...state.decisions].map((x) => x.id);
         const prev: Set<string> | null = seen;
         const fresh = new Set(prev ? ids.filter((id) => !prev.has(id)) : []);
         seen = new Set(ids);

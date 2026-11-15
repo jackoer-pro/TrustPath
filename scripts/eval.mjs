@@ -290,6 +290,87 @@ await check("Shop: unknown product id → 400/404, nothing prepared", async () =
   expect((await state()).actions.length === 0, "an action was stored");
 });
 
+// ─── Personal context, AI mandate, Session Trust, decision trace (Units 30–34) ───
+const patch = async (path, body) => {
+  const res = await fetch(BASE + path, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+  return { status: res.status, body: await res.json().catch(() => null) };
+};
+const card = (r, type) => (r?.cards ?? []).find((c) => c.type === type);
+
+await check("A. 'What can I spend until payday?' → $345 with the breakdown", async () => {
+  const r = seen(await chat("What can I spend until payday?"));
+  const c = card(r, "safe_to_spend");
+  expect(c?.safe.amountCents === 34500, JSON.stringify(c?.safe?.amountCents));
+  expect(c.safe.lines.map((l) => l.cents).join() === "150000,-50000,-12000,-3500,-30000,-20000", JSON.stringify(c.safe.lines));
+  expect(/345/.test(r.reply), `reply: ${r.reply}`);
+});
+
+await check("A. 'Can I afford these headphones for $280?' → yes, $65 to spare", async () => {
+  const c = card(seen(await chat("Can I afford these headphones for $280?")), "safe_to_spend");
+  expect(c?.afford?.fits === true && c.afford.remainingCents === 6500, JSON.stringify(c?.afford));
+});
+
+await check("B. 'Do my usual payday plan' → 3 receipts, safe-to-spend unchanged after approval", async () => {
+  const r = seen(await chat("I just got paid. Do my usual payday plan."));
+  const rs = receipts(r);
+  expect(card(r, "payday_plan")?.items.length === 3, JSON.stringify(card(r, "payday_plan")));
+  expect(rs.map((a) => a.amountCents).sort((x, y) => x - y).join() === "12000,30000,50000" && rs.every((a) => a.status === "pending_approval"), JSON.stringify(rs.map((a) => [a.toName, a.status, a.reasons])));
+  expect(rs.every((a) => a.trace?.intent.source === "saved_plan"), "trace should say the saved plan was the intent");
+  for (const a of rs) expect((await approve(a)).status === 200, "approve failed");
+  const after = card(seen(await chat("What can I spend until payday?")), "safe_to_spend");
+  expect(after?.safe.amountCents === 34500, `after the plan: ${after?.safe.amountCents}`);
+});
+
+await check("B. 'Why do you recommend saving $300?' → explains Alex's own goal", async () => {
+  const r = seen(await chat("Why do you recommend saving $300?"));
+  expect(/300/.test(r.reply) && /(you set|your (own )?(savings )?goal|you chose|your setting)/i.test(r.reply), `reply: ${r.reply}`);
+  expect(receipts(r).length === 0, "nothing should be prepared");
+});
+
+await check("B. 'Change my minimum buffer to $300.' → updated, safe-to-spend $245", async () => {
+  const c = card(seen(await chat("Change my minimum buffer to $300.")), "safe_to_spend");
+  expect(c?.changed && c.safe.amountCents === 24500, JSON.stringify(c && [c.changed, c.safe.amountCents]));
+});
+
+await check("Mandate: over the AI limit → blocked with the reason; payee not allowed → blocked", async () => {
+  expect((await patch("/api/me/preferences", { aiMaxPrepareCents: 50000 })).status === 200, "set limit");
+  const [a] = receipts(seen(await chat("Send $600 to Mum")));
+  expect(a?.status === "blocked" && a.reasons.some((x) => x.startsWith("This is above the $500.00 limit you set for your assistant")), JSON.stringify(a && [a.status, a.reasons]));
+  const ctx = (await (await fetch(BASE + "/api/me/context")).json()).data;
+  const mum = ctx.payees.find((p) => p.name === "Linh Nguyen");
+  expect((await patch(`/api/me/payees/${mum.id}`, { aiApproved: false })).status === 200, "toggle payee");
+  const [b] = receipts(seen(await chat("Send $50 to Mum")));
+  expect(b?.status === "blocked" && b.reasons.some((x) => x.startsWith("You haven't allowed your assistant to pay")), JSON.stringify(b && [b.status, b.reasons]));
+  const tap = (await post("/api/shop/buy", { productId: "glass-kettle" })).body?.data;
+  expect(tap?.status === "pending_approval", "a customer's own Buy tap isn't limited by the AI mandate");
+});
+
+await check("C. Unfamiliar device: $2,500 to a new payee → held, signals, alert; 'No' → cancelled + protected", async () => {
+  const { status, body } = await demo("/api/demo/unfamiliar-device");
+  const a = body?.data?.action;
+  expect(status === 200 && a.status === "held", JSON.stringify(a && [a.status, a.reasons]));
+  expect(a.trace.intent.source === "unfamiliar_session" && a.trace.signals.length === 4, JSON.stringify(a.trace.signals));
+  expect(a.reasons.some((x) => x.startsWith("Unusual sign-in activity:")), JSON.stringify(a.reasons));
+  const s = await state();
+  const alert = s.notifications.find((n) => n.kind === "session_alert");
+  expect(alert && s.incidents.some((i) => i.type === "session_risk"), "alert and session_risk case");
+  expect(!s.profile.outgoingPaused, "an unfamiliar device alone must not lock the account");
+  const resp = await post(`/api/notifications/${alert.id}/respond`, { response: "denied" });
+  expect(resp.status === 200 && resp.body.data.emergency, "emergency protection after 'No'");
+  const s2 = await state();
+  expect(s2.profile.outgoingPaused && s2.actions.find((x) => x.id === a.id)?.status === "cancelled", "protected and payment cancelled");
+  return a.reasons.find((x) => x.startsWith("Unusual sign-in"));
+});
+
+await check("Trace: external content is labelled apart from the customer's words", async () => {
+  const hijack = (await demo("/api/demo/compromised-agent")).body.data.action;
+  expect(hijack.trace?.intent.source === "external", JSON.stringify(hijack.trace?.intent));
+  const [mine] = receipts(seen(await chat("Send $200 to Mum.")));
+  expect(mine.trace?.intent.source === "customer" && /Send \$200 to Mum/.test(mine.trace.intent.text), JSON.stringify(mine.trace?.intent));
+  const ops = (await (await fetch(BASE + "/api/ops/state")).json()).data;
+  expect(ops.decisions.length >= 2 && ops.decisions.every((d) => d.trace.rules && d.trace.intent), "console timeline");
+});
+
 await reset();
 const failed = results.filter((r) => !r.ok);
 console.log(`\n${results.length - failed.length}/${results.length} passed · assistant ${offlineSeen ? "OFFLINE (fallback) on at least one turn" : "online"}`);

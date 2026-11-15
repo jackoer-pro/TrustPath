@@ -1,4 +1,5 @@
 import "server-only";
+import type { DecisionTrace } from "./trace";
 import { db } from "@/lib/db";
 import { DEMO_PROFILE_ID } from "./constants";
 
@@ -61,6 +62,7 @@ export async function getCustomerState() {
       createdAt: a.created_at as string,
       expiresAt: a.expires_at as string,
       completedAt: a.completed_at as string | null,
+      trace: (a.trace ?? undefined) as DecisionTrace | undefined,
     })),
     notifications: notifications.data!.map((n) => ({
       id: n.id as string,

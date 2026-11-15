@@ -117,3 +117,15 @@ test("in-app shop: buying a named product prepares it; 'any good X' finds deals"
   assert.equal(parse(u("Any good headphones under $100?")).calls[0].name, "find_deals");
   assert.equal(parse(u("Buy some headphones")).calls[0].name, "find_deals", "not a product name → deal finder");
 });
+
+test("personal context: payday plan, safe-to-spend, affordability, preferences, 'why save'", () => {
+  const n = (s: string) => parse(u(s)).calls.map((c) => c.name);
+  assert.deepEqual(n("I just got paid. Do my usual payday plan."), ["prepare_payday_plan"]);
+  assert.deepEqual(n("What can I spend until payday?"), ["get_safe_to_spend"]);
+  assert.deepEqual(parse(u("Can I afford these headphones for $280?")).calls, [{ name: "get_safe_to_spend", args: { amount: "280" } }]);
+  assert.deepEqual(parse(u("Change my minimum buffer to $300.")).calls, [{ name: "update_financial_preference", args: { setting: "min_buffer", amount: "300" } }]);
+  assert.deepEqual(n("Why do you recommend saving $300?"), ["get_financial_context"]);
+  // Unchanged: the classic Act 1 message and a one-off bill
+  assert.deepEqual(n("I just got paid $1,500. Move $300 into savings, pay my $120 electricity bill and tell me what I have left."), ["prepare_transfer", "prepare_transfer"]);
+  assert.deepEqual(n("Pay my usual $120 electricity bill"), ["prepare_transfer"]);
+});

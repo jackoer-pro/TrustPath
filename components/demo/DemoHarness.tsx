@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { saveStaffKey, useStaffKey } from "@/components/ops/staffKey";
+import { Slides, type SlideId } from "./Slides";
 
 // Filming harness (ui-context.md → Demo harness), target 1920×1080.
 const PHONE_W = 420;
@@ -14,6 +15,7 @@ const ACTIONS: Action[] = [
   { label: "Inject card attempt ($3,580)", path: "/api/simulate/card-authorization", body: { amount: 3580, merchant: "Nova Electronics Online", channel: "ecommerce" } },
   { label: "Inject normal purchase ($14.50)", path: "/api/simulate/card-authorization", body: { amount: "14.50", merchant: "Metro Café", channel: "in_store" } },
   { label: "Simulate compromised agent", path: "/api/demo/compromised-agent" },
+  { label: "Simulate unfamiliar device attack", path: "/api/demo/unfamiliar-device" },
   { label: "Reset demo", path: "/api/demo/reset" },
 ];
 
@@ -34,6 +36,7 @@ export function DemoHarness() {
   const [busy, setBusy] = useState<string | null>(null);
   const [last, setLast] = useState("");
   const [frames, setFrames] = useState(0); // bump to reload both iframes
+  const [slide, setSlide] = useState<SlideId | null>(null);
 
   async function run(a: Action) {
     setBusy(a.label);
@@ -84,10 +87,19 @@ export function DemoHarness() {
             {busy === a.label ? "Working…" : a.label}
           </Button>
         ))}
+        <div className="flex gap-2">
+          <Button size="sm" variant="ghost" className="flex-1 border border-line" onClick={() => setSlide("opening")}>
+            Opening slide
+          </Button>
+          <Button size="sm" variant="ghost" className="flex-1 border border-line" onClick={() => setSlide("closing")}>
+            Closing slide
+          </Button>
+        </div>
         <pre aria-live="polite" className="min-h-0 flex-1 overflow-auto rounded-md bg-sunken p-2 font-mono text-[11px] leading-snug whitespace-pre-wrap text-ink">
           {last || "Responses appear here."}
         </pre>
       </aside>
+      {slide && <Slides slide={slide} onClose={() => setSlide(null)} />}
     </div>
   );
 }

@@ -7,7 +7,18 @@ import { formatAUD } from "@/lib/money";
 import type { DealPick } from "@/lib/shop/deals";
 
 /** Deal picks ranked by the bank's rules (seller reliability first, then price). Buy only prepares a Trust Receipt. */
-export function DealsCard({ picks, note, onBuy }: { picks: DealPick[]; note: string | null; onBuy: (productId: string) => Promise<string | null> }) {
+export function DealsCard({
+  picks,
+  note,
+  onBuy,
+  safeToSpendCents,
+}: {
+  picks: DealPick[];
+  note: string | null;
+  onBuy: (productId: string) => Promise<string | null>;
+  /** Personal context: what Alex can safely spend until payday. */
+  safeToSpendCents?: number;
+}) {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -23,6 +34,11 @@ export function DealsCard({ picks, note, onBuy }: { picks: DealPick[]; note: str
         <ShoppingBag className="h-5 w-5 shrink-0" aria-hidden />
         Best deals
       </p>
+      {safeToSpendCents !== undefined && (
+        <p className="mt-1 text-sm text-muted">
+          Safe to spend until payday: <strong className="text-ink tabular-nums">{formatAUD(safeToSpendCents)}</strong>
+        </p>
+      )}
       {note && <p className="mt-2 text-sm text-muted">{note}</p>}
       <ul className="mt-3 space-y-3">
         {picks.map((p) => {
@@ -41,6 +57,13 @@ export function DealsCard({ picks, note, onBuy }: { picks: DealPick[]; note: str
                 {p.merchant} · <Star className="h-3 w-3" aria-hidden /> {p.rating.toFixed(1)} ({p.reviews.toLocaleString("en-AU")})
               </p>
               <p className="mt-1 text-sm text-ink">{p.why}</p>
+              {!risky && safeToSpendCents !== undefined && (
+                <p className={`mt-1 text-xs font-medium ${p.priceCents <= safeToSpendCents ? "text-risk-low" : "text-risk-high"}`}>
+                  {p.priceCents <= safeToSpendCents
+                    ? `Fits your safe-to-spend: ${formatAUD(safeToSpendCents - p.priceCents)} left until payday`
+                    : `${formatAUD(p.priceCents - safeToSpendCents)} over your safe-to-spend`}
+                </p>
+              )}
               {!risky && (
                 <Button size="sm" className="mt-2" disabled={busy !== null} onClick={() => buy(p.productId)}>
                   {busy === p.productId ? "Preparing…" : `Buy for ${formatAUD(p.priceCents)}`}

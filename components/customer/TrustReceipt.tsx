@@ -1,6 +1,7 @@
 "use client";
 
 import { ArrowRightLeft, CircleCheck, OctagonX, ShieldCheck, ShoppingBag, TriangleAlert, Zap } from "lucide-react";
+import { WhyTrace } from "./WhyTrace";
 import { Button } from "@/components/ui/Button";
 import { Money } from "@/components/ui/Money";
 import { RiskBadge } from "@/components/ui/RiskBadge";
@@ -135,6 +136,8 @@ export function TrustReceipt({
         )}
 
         {status === "held" && <p className="text-sm font-medium text-risk-high">Held for review by our team.</p>}
+
+        {a.trace && <WhyTrace trace={a.trace} />}
 
         {status === "pending_approval" && (
           <>

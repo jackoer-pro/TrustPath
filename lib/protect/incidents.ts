@@ -4,7 +4,7 @@ import { audit, type Actor } from "@/lib/audit";
 
 export type IncidentFields = {
   profileId: string;
-  type: "card_fraud" | "account_compromise" | "injection_blocked" | "scam_coaching";
+  type: "card_fraud" | "account_compromise" | "injection_blocked" | "scam_coaching" | "session_risk";
   severity: "low" | "medium" | "high" | "critical";
   status: "open" | "contained";
   title: string;

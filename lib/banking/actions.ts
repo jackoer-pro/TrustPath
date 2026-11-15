@@ -10,9 +10,11 @@ import { payloadHash } from "@/lib/trust/hash";
 import { createIncident } from "@/lib/protect/incidents";
 import { getProduct } from "@/lib/shop/products";
 import { noteCoachingHold, recentCoaching } from "@/lib/protect/coaching/analyse";
-import { DEBIT_CARD_ID, DEMO_PROFILE_ID } from "./constants";
+import { DEBIT_CARD_ID, DEMO_PROFILE_ID, EVERYDAY_ACCOUNT_ID } from "./constants";
+import { buildTrace, REGISTERED_SESSION, type DecisionTrace, type IntentSource } from "./trace";
+import type { SessionInfo } from "@/lib/trust/policy";
 
-export type Origin = "customer" | "simulated_compromised_agent";
+export type Origin = "customer" | "simulated_compromised_agent" | "simulated_unfamiliar_device";
 
 export type PreparedAction = {
   id: string;
@@ -32,6 +34,8 @@ export type PreparedAction = {
   productName?: string;
   cardLastFour?: string;
   checks: { requestedByYou: boolean; recipientKnown: boolean; fundsAvailable: boolean; cardActive?: boolean };
+  /** Why the trust engine decided what it did (shown under "Why?" and in the console). */
+  trace?: DecisionTrace;
   createdAt: string;
   expiresAt: string;
 };
@@ -43,11 +47,48 @@ export type PrepareTransferInput = {
   description?: string;
   userMessages: string[];
   origin: Origin;
+  /** An item of the customer's saved payday plan (exact payee and amount from their context): the plan is the intent record. */
+  fromSavedPlan?: boolean;
+  /** Synthetic session facts (demo); defaults to Alex's registered phone. */
+  session?: SessionInfo;
 };
+
+/** Personal facts for R9/R10: the AI mandate and buffer, and the usual largest payment to others (last 90 days). */
+async function personalFacts(ownAccountNames: string[]) {
+  const sb = db();
+  const [prefs, tx] = await Promise.all([
+    sb.from("customer_preferences").select("min_buffer_cents, ai_max_prepare_cents").eq("profile_id", DEMO_PROFILE_ID).maybeSingle(),
+    sb
+      .from("transactions")
+      .select("amount_cents, counterparty, accounts!inner(profile_id)")
+      .eq("accounts.profile_id", DEMO_PROFILE_ID)
+      .lt("amount_cents", 0)
+      .gte("created_at", new Date(Date.now() - 90 * 86_400_000).toISOString()),
+  ]);
+  if (prefs.error) throw prefs.error;
+  if (tx.error) throw tx.error;
+  const usualMaxCents = Math.max(0, ...tx.data.filter((t) => !ownAccountNames.includes(t.counterparty ?? "")).map((t) => -Number(t.amount_cents)));
+  return {
+    bufferCents: prefs.data ? Number(prefs.data.min_buffer_cents) : null,
+    maxPrepareCents: prefs.data ? Number(prefs.data.ai_max_prepare_cents) : null,
+    usualMaxCents,
+  };
+}
+
+const intentOf = (origin: Origin, opts: { fromSavedPlan?: boolean; confirmedInApp?: boolean }): IntentSource =>
+  origin === "simulated_compromised_agent"
+    ? "external"
+    : origin === "simulated_unfamiliar_device"
+      ? "unfamiliar_session"
+      : opts.fromSavedPlan
+        ? "saved_plan"
+        : opts.confirmedInApp
+          ? "app"
+          : "customer";
 
 type Named = { id: string; name: string; aliases: string[] };
 type AccountRow = Named & { balance_cents: number };
-type PayeeRow = Named & { kind: "person" | "biller"; verified: boolean; created_at: string };
+type PayeeRow = Named & { kind: "person" | "biller"; verified: boolean; created_at: string; ai_approved: boolean };
 
 /** "My savings account" → "savings". Exact matching only — no fuzzy guesses. */
 const normalise = (s: string) =>
@@ -56,6 +97,7 @@ const matches = (row: Named, text: string) =>
   row.name.toLowerCase() === text || row.aliases.includes(text);
 
 export const daysSince = (iso: string) => (Date.now() - Date.parse(iso)) / 86_400_000;
+const ago = (days: number) => (days < 1 ? "today" : `${Math.floor(days)} day${Math.floor(days) === 1 ? "" : "s"} ago`);
 
 const STATUS = { allow: "pending_approval", step_up: "pending_approval", hold: "held", block: "blocked" } as const;
 
@@ -105,7 +147,7 @@ export async function prepareTransfer(input: PrepareTransferInput): Promise<Prep
   const [profile, accounts, payees, coaching] = await Promise.all([
     sb.from("profiles").select("outgoing_paused, default_account_id").eq("id", DEMO_PROFILE_ID).single(),
     sb.from("accounts").select("id, name, aliases, balance_cents").eq("profile_id", DEMO_PROFILE_ID),
-    sb.from("payees").select("id, name, aliases, kind, verified, created_at").eq("profile_id", DEMO_PROFILE_ID),
+    sb.from("payees").select("id, name, aliases, kind, verified, created_at, ai_approved").eq("profile_id", DEMO_PROFILE_ID),
     recentCoaching(DEMO_PROFILE_ID),
   ]);
   for (const r of [profile, accounts, payees]) if (r.error) throw r.error;
@@ -128,18 +170,50 @@ export async function prepareTransfer(input: PrepareTransferInput): Promise<Prep
       ? { kind: payee.kind, verified: payee.verified, name: payee.name, aliases: payee.aliases, addedDaysAgo: daysSince(payee.created_at) }
       : null;
 
-  const provenance = checkProvenance(
-    { type: "transfer", amountCents: input.amountCents, rawTo: input.to, recipientAliases: recipient?.aliases ?? [] },
-    input.userMessages,
-  );
+  const provenance = input.fromSavedPlan
+    ? { amountOk: true, recipientOk: true }
+    : checkProvenance({ type: "transfer", amountCents: input.amountCents, rawTo: input.to, recipientAliases: recipient?.aliases ?? [] }, input.userMessages);
   const balance = Number(from.balance_cents);
+  const facts = await personalFacts(accts.map((a) => a.name));
+  const session = input.session ?? REGISTERED_SESSION;
+  const intent = intentOf(input.origin, input);
   const verdict = assess(
     { type: "transfer", amountCents: input.amountCents },
-    { outgoingPaused: profile.data!.outgoing_paused, sourceBalanceCents: balance, recipient, provenance, coaching },
+    {
+      outgoingPaused: profile.data!.outgoing_paused,
+      sourceBalanceCents: balance,
+      recipient,
+      provenance,
+      coaching,
+      // The mandate covers anything an assistant or agent prepares; a person on another device is session risk (R10).
+      mandate:
+        facts.maxPrepareCents !== null && intent !== "unfamiliar_session"
+          ? { agent: true, maxPrepareCents: facts.maxPrepareCents, recipientApproved: payee ? payee.ai_approved : null }
+          : null,
+      buffer: facts.bufferCents !== null && from.id === EVERYDAY_ACCOUNT_ID ? { bufferCents: facts.bufferCents, balanceAfterCents: balance - input.amountCents } : null,
+      session,
+      usualMaxCents: facts.usualMaxCents,
+    },
   );
 
   const id = randomUUID();
   const toName = recipient?.name ?? input.to;
+  const trace = buildTrace({
+    source: intent,
+    text: intent === "external" ? null : (input.userMessages.at(-1) ?? input.description ?? null),
+    session,
+    transaction: {
+      type: "transfer",
+      amount: formatAUD(input.amountCents),
+      from: from.name,
+      to: toName,
+      notes: [
+        recipient ? (recipient.kind === "own_account" ? "Your own account" : `Saved payee${payee ? ` · added ${ago(daysSince(payee.created_at))}` : ""}${recipient.verified ? "" : " · not verified"}`) : "Not a saved payee",
+        ...(facts.usualMaxCents ? [`Your usual largest payment: ${formatAUD(facts.usualMaxCents)}`] : []),
+      ],
+    },
+    verdict,
+  });
   const hash = payloadHash({ actionId: id, type: "transfer", fromAccountId: from.id, toAccountId: toAccount?.id, payeeId: payee?.id, amountCents: input.amountCents });
   const stored = await store(
     {
@@ -152,10 +226,11 @@ export async function prepareTransfer(input: PrepareTransferInput): Promise<Prep
       amount_cents: input.amountCents,
       description: input.description ?? null,
       payload_hash: hash,
+      trace,
     },
     verdict,
     input.origin,
-    { type: "transfer", amountCents: input.amountCents, to: input.to },
+    { type: "transfer", amountCents: input.amountCents, to: input.to, intent, ...(input.session && { session: input.session.label }) },
     toName,
   );
 
@@ -181,6 +256,7 @@ export async function prepareTransfer(input: PrepareTransferInput): Promise<Prep
       recipientKnown: recipient !== null,
       fundsAvailable: input.amountCents <= balance,
     },
+    trace,
   };
 }
 
@@ -208,6 +284,8 @@ export async function preparePurchase(input: {
     ? { amountOk: true, recipientOk: true }
     : checkProvenance({ type: "purchase", productTerms: [product.id, product.name.toLowerCase(), `/shop/${product.id}`] }, input.userMessages);
   const balance = Number(account.balance_cents);
+  const facts = await personalFacts([]);
+  const intent = intentOf(input.origin, input);
   const verdict = assess(
     { type: "purchase", amountCents: product.priceCents },
     {
@@ -216,8 +294,19 @@ export async function preparePurchase(input: {
       recipient: null,
       cardStatus: card.data!.status,
       provenance,
+      // A Buy tap is the customer's own action: the AI limit doesn't apply. The buffer warning always does.
+      mandate: facts.maxPrepareCents !== null && !input.confirmedInApp ? { agent: true, maxPrepareCents: facts.maxPrepareCents, recipientApproved: null } : null,
+      buffer: facts.bufferCents !== null && account.id === EVERYDAY_ACCOUNT_ID ? { bufferCents: facts.bufferCents, balanceAfterCents: balance - product.priceCents } : null,
+      session: REGISTERED_SESSION,
     },
   );
+  const trace = buildTrace({
+    source: intent,
+    text: intent === "app" ? `Buy ${product.name}` : (input.userMessages.at(-1) ?? null),
+    session: REGISTERED_SESSION,
+    transaction: { type: "purchase", amount: formatAUD(product.priceCents), from: account.name as string, to: product.merchant, notes: [product.name, "Price from the shop catalogue"] },
+    verdict,
+  });
 
   const id = randomUUID();
   const hash = payloadHash({ actionId: id, type: "purchase", fromAccountId: account.id, productId: product.id, amountCents: product.priceCents });
@@ -231,6 +320,7 @@ export async function preparePurchase(input: {
       amount_cents: product.priceCents,
       description: product.name,
       payload_hash: hash,
+      trace,
     },
     verdict,
     input.origin,
@@ -260,5 +350,6 @@ export async function preparePurchase(input: {
       fundsAvailable: product.priceCents <= balance,
       cardActive: card.data!.status === "active",
     },
+    trace,
   };
 }

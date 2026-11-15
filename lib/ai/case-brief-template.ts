@@ -4,7 +4,7 @@ import { formatAUD } from "../money.ts";
 export type CaseBrief = { summary: string; timeline: string[]; measures: string[]; nextStep: string; source: "ai" | "template" };
 
 export type CaseFacts = {
-  incident: { type: "card_fraud" | "account_compromise" | "injection_blocked" | "scam_coaching"; severity: string; status: string; title: string; description: string; measures: string[] };
+  incident: { type: "card_fraud" | "account_compromise" | "injection_blocked" | "scam_coaching" | "session_risk"; severity: string; status: string; title: string; description: string; measures: string[] };
   cardEvent?: { merchant: string; amountCents: number; channel: string; decision: string; reasons: string[]; cardAction: string; cardLastFour: string };
   action?: { amountCents: number; to: string; status: string; origin: string; reasons: string[] };
   customerResponse?: "confirmed" | "denied" | null;
@@ -23,6 +23,8 @@ const NEXT_STEP = {
   account_compromise:
     "Call the customer on their registered number, confirm their identity, reset their credentials, then lift the restrictions once the account is safe.",
   injection_blocked: "No customer action needed. Review the merchant's page content and consider flagging the merchant.",
+  session_risk:
+    "Contact the customer on their registered number. If they didn't make the request, keep the payment cancelled, reset their credentials and review recent sign-ins. Never release the payment on the strength of the new session.",
   scam_coaching:
     "Call the customer on their registered number (never a number from the message). Ask who is directing them, explain the coaching signs, and only release a held payment once you're satisfied they aren't being coached.",
 };
@@ -41,6 +43,12 @@ export function templateBrief(f: CaseFacts): CaseBrief {
     timeline.push("Customer sent \"Was this you?\".");
     if (f.customerResponse) timeline.push(f.customerResponse === "denied" ? "Customer said it wasn't them." : "Customer confirmed the payment.");
     nextStep = NEXT_STEP.card_fraud[f.customerResponse ?? "none"];
+  } else if (i.type === "session_risk") {
+    summary = a
+      ? `A session on a device the bank didn't recognise tried to send ${formatAUD(a.amountCents)} to ${a.to}; the trust engine ${a.status === "cancelled" ? "held it and the customer cancelled it" : `${a.status} it`}.`
+      : i.description;
+    timeline.push(`Request from an unrecognised session → ${a?.status ?? "held"}.`, ...(a?.reasons ?? []));
+    nextStep = NEXT_STEP.session_risk;
   } else if (i.type === "scam_coaching") {
     const c = f.coaching;
     summary = `The customer shared a message that CoachGuard assessed as ${c ? c.assessment.replace("_", " ") : "showing scam-coaching signs"}. ${c?.explanation ?? i.description}`;
