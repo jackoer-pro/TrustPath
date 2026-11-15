@@ -1,6 +1,6 @@
 # 25 — Staff review and resolve
 
-Status: draft
+Status: done
 
 ## Goal
 
@@ -59,31 +59,49 @@ to the same effect. **Golden-path step 18 / Act 4 passes.**
 
 ## Clarify before building
 
-1. **Staff actions require the demo key**, typed into a "Staff key" field
-   in the console and kept only for that browser tab. Viewing stays open.
-   OK?
-2. **Resolve also marks the case (and its linked open cases) investigated**,
-   so one click closes the incident group. "Mark investigated" alone is for
-   cases that need no unlock (e.g. injection). OK?
-3. **Lost cards stay locked** after resolve (`reported_lost`); everything
-   else becomes `active`. OK?
-4. **No customer notification** on resolve; the Protect tab simply returns
-   to "Protected" on the next poll. OK?
+Answered by the developer, Sun 15 Nov: all four proposals accepted (this is
+the explicit instruction for the security-sensitive resolve route).
+
+1. Staff actions require the demo key, typed into the console and kept for
+   the tab.
+2. Resolve also closes the case and its linked open cases.
+3. Lost cards stay locked after resolve.
+4. No customer notification on resolve.
 
 ## Verify when done
 
-- [ ] Without the key → 401 for both routes; unknown id → 404; reviewing
+- [x] Without the key → 401 for both routes; unknown id → 404; reviewing
       twice → 409; resolving an injection incident → 409.
-- [ ] After steps 10–13: resolve the account-compromise case → profile
+- [x] After steps 10–13: resolve the account-compromise case → profile
       flags cleared, card `active`, both cases `investigated` by
       `demo-specialist`, audit rows `bank_staff`. The customer's Protect
       tab shows "Protected" within 2 s, and "Send $50 to Mum" works again.
-- [ ] The buttons are disabled without the key; the confirm dialog shows
+- [x] The buttons are disabled without the key; the confirm dialog shows
       the card and customer.
-- [ ] The invariant test passes (no AI path to unlock or resolve).
-- [ ] `npm test`, `npm run build` and `npm run lint` pass. Deployed and
+- [x] The invariant test passes (no AI path to unlock or resolve).
+- [x] `npm test`, `npm run build` and `npm run lint` pass. Deployed and
       checked on the public URL.
 
 ## Built (filled in after completion)
 
--
+Sun 15 Nov.
+
+- `lib/ops/staff.ts` → `reviewIncident()`, `resolveIncident()`
+  (`REVIEWER = 'demo-specialist'`; closes open cases within an hour either
+  side of the resolved one). Routes `POST
+  /api/ops/incidents/[id]/review|resolve` (demo key). Both files are now on
+  the security-sensitive list in `ai-workflow-rules.md`.
+- Console: a "Staff key" password field in the header (`sessionStorage`
+  via `useSyncExternalStore`, with an in-memory fallback), `StaffActions`
+  in `IncidentDetail` with a confirm `Dialog`. `getOpsState()` now returns
+  `customer` (name, cards, paused flag) for the dialog.
+- `lib/ai/no-staff-path.test.ts` (2 tests, 65 total): no tool name contains
+  unlock/resolve/lift/approve/review, and no `lib/ai` source imports staff
+  actions or approval, or calls `complete_action`.
+- Verified in headless Chrome: 401 / 404 / 409 guards; buttons disabled
+  without the key; "Mark investigated" → investigated; the confirm dialog
+  reads "This unlocks card •••• 4821 and lifts all restrictions for Alex
+  Nguyen"; resolve → flags cleared, card active, both cases investigated by
+  `demo-specialist`, `bank_staff` rows in the audit log; the customer's
+  Protect tab is "Protected / Active / No open cases" and "Send $50 to Mum"
+  is approvable again. No console errors.

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { Activity, ScrollText, ShieldAlert } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { AuditLog } from "./AuditLog";
@@ -15,9 +15,36 @@ const nav = [
   { label: "Audit", Icon: ScrollText },
 ];
 
+// Staff key: kept for this tab only (sessionStorage), with an in-memory fallback when storage is blocked.
+const STAFF_KEY = "trustpath-staff-key";
+let staffKeyMemo: string | null = null;
+const keyListeners = new Set<() => void>();
+const readStaffKey = () => {
+  if (staffKeyMemo === null) {
+    try {
+      staffKeyMemo = sessionStorage.getItem(STAFF_KEY) ?? "";
+    } catch {
+      staffKeyMemo = "";
+    }
+  }
+  return staffKeyMemo;
+};
+function saveKey(k: string) {
+  staffKeyMemo = k;
+  try {
+    sessionStorage.setItem(STAFF_KEY, k);
+  } catch {}
+  keyListeners.forEach((l) => l());
+}
+const subscribeKey = (l: () => void) => {
+  keyListeners.add(l);
+  return () => keyListeners.delete(l);
+};
+
 export function OpsView() {
   const { state, fresh, error } = useOpsState();
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const staffKey = useSyncExternalStore(subscribeKey, readStaffKey, () => "");
   const selected = state?.incidents.find((i) => i.id === selectedId) ?? null;
 
   const stats = [
@@ -43,6 +70,16 @@ export function OpsView() {
       <main className="flex min-w-0 flex-1 flex-col gap-4 p-4 md:p-6">
         <header className="flex flex-wrap items-center justify-between gap-3">
           <h1 className="font-display text-3xl text-navy">Fraud Operations (demo)</h1>
+          <label className="flex items-center gap-2 text-sm text-muted">
+            Staff key
+            <input
+              type="password"
+              autoComplete="off"
+              value={staffKey}
+              onChange={(e) => saveKey(e.target.value)}
+              className="h-9 w-40 rounded-md border border-line bg-surface px-2 text-ink"
+            />
+          </label>
           <div className="flex flex-wrap gap-2" aria-label="Stats">
             {stats.map((s) => (
               <span key={s.label} className="rounded-full border border-line bg-surface px-3 py-1 text-sm">
@@ -67,7 +104,12 @@ export function OpsView() {
         <Card className="p-4">
           <h2 className="text-lg font-semibold">Incident detail</h2>
           {selected ? (
-            <IncidentDetail incident={selected} event={state?.cardEvents.find((e) => e.id === selected.cardEventId) ?? null} />
+            <IncidentDetail
+              incident={selected}
+              event={state?.cardEvents.find((e) => e.id === selected.cardEventId) ?? null}
+              customer={state!.customer}
+              staffKey={staffKey}
+            />
           ) : (
             <p className="mt-2 text-sm text-muted">Select an incident to see its case brief.</p>
           )}

@@ -2,18 +2,21 @@
 import "server-only";
 import { db } from "@/lib/db";
 import { parseBrief } from "@/lib/ai/case-brief";
+import { DEMO_PROFILE_ID } from "@/lib/banking/constants";
 
 const LIMIT = 50;
 
 export async function getOpsState() {
   const sb = db();
   const dayAgo = new Date(Date.now() - 24 * 3600_000).toISOString();
-  const [events, incidents, audit] = await Promise.all([
+  const [events, incidents, audit, customer] = await Promise.all([
     sb.from("card_events").select("*, cards(last_four)").order("created_at", { ascending: false }).limit(LIMIT),
     sb.from("incidents").select("*").order("created_at", { ascending: false }),
     sb.from("audit_logs").select("*").order("created_at", { ascending: false }).limit(LIMIT),
+    // ponytail: single demo customer; join incidents to their own profile when there are many.
+    sb.from("profiles").select("name, outgoing_paused, cards(last_four, status, reported_lost)").eq("id", DEMO_PROFILE_ID).single(),
   ]);
-  for (const r of [events, incidents, audit]) if (r.error) throw r.error;
+  for (const r of [events, incidents, audit, customer]) if (r.error) throw r.error;
   const actionIds = incidents.data!.map((i) => i.action_id as string | null).filter((x): x is string => !!x);
   const actions = actionIds.length ? await sb.from("pending_actions").select("*").in("id", actionIds) : { data: [], error: null };
   if (actions.error) throw actions.error;
@@ -52,7 +55,13 @@ export async function getOpsState() {
     createdAt: i.created_at as string,
   }));
 
+  const c = customer.data!;
   return {
+    customer: {
+      name: c.name as string,
+      outgoingPaused: c.outgoing_paused as boolean,
+      cards: (c.cards as { last_four: string; status: string; reported_lost: boolean }[]).map((x) => ({ lastFour: x.last_four, status: x.status, reportedLost: x.reported_lost })),
+    },
     stats: {
       // ponytail: "today" = last 24 h, add a timezone-aware day boundary if the console is used across days.
       declined: cardEvents.filter((e) => e.decision === "declined" && e.createdAt >= dayAgo).length,

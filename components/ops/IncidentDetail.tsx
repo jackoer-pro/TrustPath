@@ -3,11 +3,17 @@ import { Badge } from "@/components/ui/Badge";
 import { caseNumber } from "@/lib/case-number";
 import { formatAUD } from "@/lib/money";
 import type { OpsState } from "@/lib/ops/state";
+import { StaffActions } from "./StaffActions";
 import { clock, LEVEL } from "./tone";
 
-type Props = { incident: OpsState["incidents"][number]; event: OpsState["cardEvents"][number] | null };
+type Props = {
+  incident: OpsState["incidents"][number];
+  event: OpsState["cardEvents"][number] | null;
+  customer: OpsState["customer"];
+  staffKey: string;
+};
 
-export function IncidentDetail({ incident: i, event: e }: Props) {
+export function IncidentDetail({ incident: i, event: e, customer, staffKey }: Props) {
   const b = i.brief;
   return (
     <div className="mt-3 grid gap-4 lg:grid-cols-[3fr_2fr]">
@@ -56,6 +62,7 @@ export function IncidentDetail({ incident: i, event: e }: Props) {
             </div>
           </div>
         )}
+        <StaffActions key={i.id} incident={i} customer={customer} staffKey={staffKey} />
       </section>
 
       <section aria-label="Related record" className="min-w-0 space-y-3 text-sm">
