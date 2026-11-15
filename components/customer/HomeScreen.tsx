@@ -6,6 +6,7 @@ import type { PreparedAction } from "@/lib/banking/actions";
 import type { CustomerState } from "@/lib/banking/state";
 import { AccountSummary } from "./AccountSummary";
 import { AlertBanner } from "./AlertBanner";
+import { EmergencyCard } from "./EmergencyCard";
 import { ChatInput } from "./ChatInput";
 import { ChatThread, type ChatMsg } from "./ChatThread";
 import { PinDialog, type ApproveResult } from "./PinDialog";
@@ -172,6 +173,8 @@ export function HomeScreen() {
           renderCard={(c) =>
             c.type === "shield" ? (
               <ShieldCard card={c} />
+            ) : c.type === "emergency" ? (
+              <EmergencyCard card={c} />
             ) : (
               <TrustReceipt
                 action={c.action}

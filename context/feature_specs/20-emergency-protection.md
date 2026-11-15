@@ -1,6 +1,6 @@
 # 20 — Emergency protection
 
-Status: draft
+Status: done
 
 ## Goal
 
@@ -68,33 +68,62 @@ ticked. **Golden-path steps 12–13 and 16 work online and offline.**
 
 ## Clarify before building
 
-1. **Adding `report_account_compromise` to the tool list.** The tool list is
-   security-sensitive, so this needs your explicit OK. It's protect-only: it
-   can lock and pause, never unlock, approve or move money. OK?
-2. **No provenance check on this tool.** Unlike transfers, it only makes
-   things safer. Worst case (a hidden instruction triggers it), the account
-   is locked until staff review. Accept that trade-off? (Alternative:
-   require the customer's own last message to mention a scam, code or hack.)
-3. **Activating twice** re-applies the measures and escalates the existing
-   case instead of opening a second one. OK?
-4. **Fallback triggers** as listed above, including "wasn't me". OK?
+Answered by the developer, Sun 15 Nov: all four proposals accepted.
+
+1. `report_account_compromise` added to the tool list (protect-only).
+2. No provenance check on this tool; the worst case is a lockdown until
+   staff review.
+3. Activating twice escalates the existing case.
+4. Fallback triggers as listed, including "wasn't me".
 
 ## Verify when done
 
 After a reset, then inject Nova and deny (Unit 19):
 
-- [ ] Online: the step-12 message → the step-13 reply and an
+- [x] Online: the step-12 message → the step-13 reply and an
       `EmergencyCard` with five ticks. The profile flags are set, the card
       is `locked`, pending approvals are `cancelled`, and there's 1
       `account_compromise` incident (critical, contained); the Nova
       incident gets "Linked to emergency case".
-- [ ] Offline (no key): the same result with the fixed reply.
-- [ ] Step 16: "Send $50 to Mum" → a Blocked receipt with the R1 reason.
-- [ ] A second activation → still 1 `account_compromise` incident.
-- [ ] Audit rows for activation, locks and cancellations.
-- [ ] `npm test` (fallback-parser cases added), `npm run build` and `npm run
+- [x] Offline (no key): the same result with the fixed reply.
+- [x] Step 16: "Send $50 to Mum" → a Blocked receipt with the R1 reason.
+- [x] A second activation → still 1 `account_compromise` incident.
+- [x] Audit rows for activation, locks and cancellations.
+- [x] `npm test` (fallback-parser cases added), `npm run build` and `npm run
       lint` pass. Deployed and checked on the public URL.
 
 ## Built (filled in after completion)
 
--
+Sun 15 Nov.
+
+- `lib/protect/emergency.ts` → `activate()`; `report_account_compromise`
+  tool (protect-only, added on the developer's explicit OK); `EmergencyCard`
+  (critical colours, `ShieldAlert`, `CircleCheck` ticks); `ChatCard` gains
+  `emergency`. `EMERGENCY_REPLY` in `lib/ai/tools.ts` is the offline reply
+  and the line the prompt asks for. If DeepSeek fails after the tool ran,
+  the agent keeps the card and that reply (it never activates twice).
+- The fallback trigger is `scammed`, `hacked`, `security code`, `protect my
+  money/account`, `wasn't me` (straight or curly apostrophe), and `gave …
+  code/password/pin/card details`. A bare "scam" doesn't trigger, so "How do
+  I spot a scam?" stays a question for Unit 21. 1 new parser test (54
+  total).
+- **Prompt changes, found by testing:**
+  - "Never refuse a transfer or purchase in words; always call the prepare
+    tool and let the bank's checks decide". Without it the model refused
+    step 16 in words, so no Blocked card appeared.
+  - "Only if Alex's **latest** message reports it". Without it the model
+    re-activated on the next turn because the scam statement was still in
+    the history.
+  - After both, step 16 gave a Blocked R1 card 5 of 5 times online.
+- Verified in headless Chrome, online and offline: step 13 reply + 5
+  ticks (3.7 s online, 1.2 s offline); flags set, card `locked`, the
+  earlier "$300 to savings" approval → Cancelled on screen, 1 critical
+  contained `account_compromise` case, the Nova incident "Linked to
+  emergency case", `ai_agent` audit rows; step 16 Blocked with "Outgoing
+  payments are paused while emergency protection is on."; a second
+  activation still gives 1 case. Unit 15 check (Act 1 + steps 5–7) still
+  passes online and offline.
+- Still open for Unit 27: "$10,000 to a new recipient" is still refused in
+  words online (the prompt also says new payees can't be added), so no
+  Blocked card. The offline "I think I've been scammed" chip now turns
+  protection on, which is intended.

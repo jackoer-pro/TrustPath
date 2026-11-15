@@ -72,3 +72,12 @@ test("buy + shop link → view_product then prepare_purchase, no transfer", () =
 test("transactions", () => {
   assert.deepEqual(parse(u("Show my recent transactions")).calls, [{ name: "get_recent_transactions", args: { limit: 5 } }]);
 });
+
+test("compromise reports → report_account_compromise only, with the customer's own words", () => {
+  const step12 = "I think I gave someone my bank security code over the phone. Protect my money.";
+  assert.deepEqual(parse(u(step12)).calls, [{ name: "report_account_compromise", args: { customerStatement: step12 } }]);
+  for (const s of ["I think I've been scammed", "My account was hacked", "That wasn’t me", "I gave them my password", "Protect my account and send $50 to Mum"])
+    assert.deepEqual(parse(u(s)).calls.map((c) => c.name), ["report_account_compromise"], s);
+  for (const s of ["How do I spot a scam?", "What's my security status?", "Send $50 to Mum"])
+    assert.ok(!parse(u(s)).calls.some((c) => c.name === "report_account_compromise"), s);
+});

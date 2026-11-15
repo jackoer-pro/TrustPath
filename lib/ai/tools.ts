@@ -7,14 +7,21 @@ import { getCustomerState } from "@/lib/banking/state";
 import { preparePurchase, prepareTransfer, type PreparedAction } from "@/lib/banking/actions";
 import { DEMO_PROFILE_ID } from "@/lib/banking/constants";
 import { createIncident } from "@/lib/protect/incidents";
+import { activate } from "@/lib/protect/emergency";
 import type { ToolDef } from "./deepseek";
 import { readProduct } from "./product-view";
 
-// The complete tool list (architecture.md → AI Model). Read and prepare only:
-// no tool may approve, execute, unlock or change rules (invariant 1).
+// The complete tool list (architecture.md → AI Model). Read, prepare and protect only:
+// no tool may approve, execute, unlock or change rules (invariant 1). The one protect
+// tool (report_account_compromise) only restricts; added on explicit developer OK (Unit 20).
+
+/** The step-13 opening line: the offline reply, and what the prompt asks the model to say. */
+export const EMERGENCY_REPLY =
+  "You may have shared information that could allow someone to access your account. Let's protect your money first.";
 
 export type ShieldCardData = { type: "shield"; id: string; merchant: string; source: string; removed: string };
-export type ChatCard = { type: "receipt"; action: PreparedAction } | ShieldCardData;
+export type EmergencyCardData = { type: "emergency"; incidentId: string; measures: { label: string; done: boolean }[] };
+export type ChatCard = { type: "receipt"; action: PreparedAction } | ShieldCardData | EmergencyCardData;
 
 /** Per chat turn. `injectionReported` keeps it to one incident + one shield card per turn. */
 export type ToolContext = { userMessages: string[]; injectionReported?: boolean };
@@ -250,7 +257,31 @@ const viewProduct = tool({
   },
 });
 
-const TOOLS = [getAccounts, getRecentTransactions, getPayees, prepareTransferTool, viewProduct, preparePurchaseTool];
+const reportAccountCompromise = tool({
+  def: {
+    type: "function",
+    function: {
+      name: "report_account_compromise",
+      description:
+        "Turn on emergency protection: lock all cards, pause outgoing transfers, block new payees, cancel pending approvals and open a critical case. Use only when Alex's latest message says they shared a code, password or card details, or thinks they've been scammed or hacked.",
+      parameters: {
+        type: "object",
+        properties: { customerStatement: { type: "string", description: "What Alex said happened, in their words." } },
+        required: ["customerStatement"],
+      },
+    },
+  },
+  args: z.object({ customerStatement: z.string().trim().min(1).max(1000) }),
+  async run({ customerStatement }) {
+    const r = await activate(DEMO_PROFILE_ID, customerStatement);
+    return {
+      card: { type: "emergency", incidentId: r.incidentId, measures: r.measures },
+      forModel: { protectionOn: true, measures: r.measures.map((m) => m.label) },
+    };
+  },
+});
+
+const TOOLS = [getAccounts, getRecentTransactions, getPayees, prepareTransferTool, viewProduct, preparePurchaseTool, reportAccountCompromise];
 export const TOOL_DEFS: ToolDef[] = TOOLS.map((t) => t.def);
 
 /** Validate the model's arguments with Zod and run the tool. Bad args and AppErrors go back to the model; they never throw. */

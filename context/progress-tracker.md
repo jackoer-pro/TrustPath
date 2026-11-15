@@ -8,13 +8,14 @@ Update this file after every meaningful implementation change.
   **Act 1 passes end to end on the public URL.** Units 13–16 done;
   **golden-path steps 1–7 pass online and offline**, and the hijack block is
   demoable on demand. Units 17–18 done; **golden-path step 10 works
-  through the API.** Phase C: Unit 19 done (alert and deny on screen). Unit 20
-  spec drafted, awaiting clarification.
+  through the API.** Phase C: Units 19–20 done; **golden-path steps 10–13
+  and 16 pass online and offline.** Unit 21 spec drafted, awaiting
+  clarification.
 
 ## Current Goal
 
 - Answer the "Clarify before building" questions in
-  `context/feature_specs/20-emergency-protection.md`, then build Unit 20.
+  `context/feature_specs/21-safety-knowledge.md`, then build Unit 21.
 
 ## Schedule
 
@@ -64,8 +65,8 @@ before it's built. What each unit contains and when it counts as done is in
 **Phase C — Protection and the bank side**
 
 - [x] 19 "Was this you?" alert (steps 10–12)
-- [ ] 20 Emergency protection (steps 12–13, 16) — spec drafted
-- [ ] 21 Safety knowledge base (step 14)
+- [x] 20 Emergency protection (steps 12–13, 16)
+- [ ] 21 Safety knowledge base (step 14) — spec drafted
 - [ ] 22 Protect tab (step 15)
 - [ ] 23 Bank console lists (steps 8, 11)
 - [ ] 24 AI case brief (step 17)
@@ -166,6 +167,12 @@ before it's built. What each unit contains and when it counts as done is in
   "No, it wasn't me" locks the card, raises the incident and opens the chat
   with the follow-up question. **Golden-path steps 10–12 (first half) work
   on screen.** See `feature_specs/19-was-this-you.md` → Built.
+- **Unit 20 Emergency protection** (Sun 15 Nov): `activate()`, the
+  protect-only `report_account_compromise` tool, the offline trigger and
+  `EmergencyCard`. **Steps 12–13 and 16 pass online and offline.** Two
+  prompt rules were added (always prepare, let the bank block; activate
+  only on the latest message). See `feature_specs/20-emergency-protection.md`
+  → Built.
 
 ## In Progress
 
@@ -173,10 +180,10 @@ before it's built. What each unit contains and when it counts as done is in
 
 ## Next Up
 
-- Developer answers the questions in `20-emergency-protection.md`.
+- Developer answers the questions in `21-safety-knowledge.md`.
 - Developer: set Vercel `DEMO_ADMIN_KEY` to the generated production key and
   redeploy (see `12-first-deploy.md` → Built).
-- Build and verify Unit 20, tick it above, then write `21-safety-knowledge.md`.
+- Build and verify Unit 21, tick it above, then write `22-protect-tab.md`.
 
 ## Open Questions
 
@@ -260,6 +267,9 @@ All decided Sat 14 Nov 2026:
   is used as an accent, navy as primary, and trust teal for the trust layer.
   No Westpac logo. This was the developer's call (a mix of own brand and the
   Westpac look).
+- **The bank blocks, not the model (Unit 20).** The prompt tells the model
+  never to refuse a payment in words and always to call the prepare tool,
+  so the trust engine decides and Alex sees the reason on a card.
 - **Tests run with Node's built-in runner** (Node 26 strips types), with no
   test framework dependency.
 - **The teammate owns** the video (reenactment, recording, editing), testing
