@@ -1,6 +1,7 @@
 // Bank console read model (GET /api/ops/state). Read only; staff actions are Unit 25.
 import "server-only";
 import { db } from "@/lib/db";
+import { parseBrief } from "@/lib/ai/case-brief";
 
 const LIMIT = 50;
 
@@ -13,6 +14,15 @@ export async function getOpsState() {
     sb.from("audit_logs").select("*").order("created_at", { ascending: false }).limit(LIMIT),
   ]);
   for (const r of [events, incidents, audit]) if (r.error) throw r.error;
+  const actionIds = incidents.data!.map((i) => i.action_id as string | null).filter((x): x is string => !!x);
+  const actions = actionIds.length ? await sb.from("pending_actions").select("*").in("id", actionIds) : { data: [], error: null };
+  if (actions.error) throw actions.error;
+  const actionById = new Map(
+    actions.data!.map((a) => [
+      a.id as string,
+      { amountCents: Number(a.amount_cents), to: (a.recipient_label ?? a.merchant ?? "saved payee") as string, status: a.status as string, origin: a.origin as string, reasons: a.reasons as string[] },
+    ]),
+  );
 
   const cardEvents = events.data!.map((e) => ({
     id: e.id as string,
@@ -36,7 +46,8 @@ export async function getOpsState() {
     measures: i.measures as string[],
     cardEventId: i.card_event_id as string | null,
     actionId: i.action_id as string | null,
-    aiBrief: i.ai_brief as string | null,
+    action: i.action_id ? (actionById.get(i.action_id) ?? null) : null,
+    brief: parseBrief(i.ai_brief as string | null),
     reviewedBy: i.reviewed_by as string | null,
     createdAt: i.created_at as string,
   }));

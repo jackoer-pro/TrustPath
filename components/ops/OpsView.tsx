@@ -5,6 +5,7 @@ import { Activity, ScrollText, ShieldAlert } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { AuditLog } from "./AuditLog";
 import { CardEventList } from "./CardEventList";
+import { IncidentDetail } from "./IncidentDetail";
 import { IncidentList } from "./IncidentList";
 import { useOpsState } from "./useOpsState";
 
@@ -66,11 +67,7 @@ export function OpsView() {
         <Card className="p-4">
           <h2 className="text-lg font-semibold">Incident detail</h2>
           {selected ? (
-            // ponytail: minimal detail until Unit 24 (IncidentDetail + AI case brief).
-            <div className="mt-2 space-y-1 text-sm">
-              <p className="font-medium">{selected.title}</p>
-              <p className="text-muted">{selected.description}</p>
-            </div>
+            <IncidentDetail incident={selected} event={state?.cardEvents.find((e) => e.id === selected.cardEventId) ?? null} />
           ) : (
             <p className="mt-2 text-sm text-muted">Select an incident to see its case brief.</p>
           )}

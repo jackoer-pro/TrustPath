@@ -1,4 +1,6 @@
+import { after } from "next/server";
 import { z } from "zod";
+import { writeCaseBrief } from "@/lib/ai/case-brief";
 import { fail, run } from "@/lib/http";
 import { runAgent, HISTORY_LIMIT } from "@/lib/ai/agent";
 
@@ -17,5 +19,11 @@ const Body = z.object({
 export async function POST(req: Request) {
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return fail("BAD_REQUEST", "Invalid request", 400);
-  return run(() => runAgent(parsed.data.messages));
+  return run(async () => {
+    const result = await runAgent(parsed.data.messages);
+    // Case briefs for incidents this turn created or escalated, written after the reply is sent.
+    const ids = result.cards.flatMap((c) => (c.type === "emergency" ? [c.incidentId] : c.type === "shield" ? [c.id] : []));
+    if (ids.length) after(() => Promise.all(ids.map(writeCaseBrief)));
+    return result;
+  });
 }

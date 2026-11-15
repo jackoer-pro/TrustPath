@@ -1,6 +1,6 @@
 # 24 — AI case brief
 
-Status: draft
+Status: done
 
 ## Goal
 
@@ -59,33 +59,50 @@ is used. **Golden-path step 17 works online and offline.**
 
 ## Clarify before building
 
-1. **Written in the background with `after()`**, so the card authorisation
-   and chat replies stay fast and the brief appears in the console about
-   3 s later. OK?
-2. **Briefs for all three incident types**, and the account-compromise
-   brief is rewritten when the case is escalated. OK?
-3. **Stored as JSON in the existing `ai_brief` text column** (no
-   migration). OK?
-4. **The model only sees the facts we assemble** (no customer chat
-   history beyond the stored statement in the incident), and the template
-   is used on any failure. OK?
+Answered by the developer, Sun 15 Nov: all four proposals accepted.
+
+1. Written in the background with `after()`.
+2. Briefs for all three incident types; rewritten on escalation.
+3. Stored as JSON in `ai_brief` (no migration).
+4. The model sees only assembled facts; the template on any failure.
 
 ## Verify when done
 
-- [ ] `case-brief.test.ts`: the template for each incident type includes
+- [x] `case-brief.test.ts`: the template for each incident type includes
       the event or action, the measures and a next step.
-- [ ] Online: Nova → within about 5 s the incident has an AI brief naming
+- [x] Online: Nova → within about 5 s the incident has an AI brief naming
       the $3,580 Nova attempt, the reasons and a next step; the card-auth
       response time is unchanged.
-- [ ] Steps 12–13 → the account-compromise brief mentions the shared code,
+- [x] Steps 12–13 → the account-compromise brief mentions the shared code,
       the Nova event and the five measures.
-- [ ] Offline (no key) → template briefs, labelled as such.
-- [ ] The decision, card status and measures are identical with and
+- [x] Offline (no key) → template briefs, labelled as such.
+- [x] The decision, card status and measures are identical with and
       without the brief (the brief only writes `ai_brief`).
-- [ ] `lib/fraud/**` still never imports `lib/ai` (grep).
-- [ ] `npm test`, `npm run build` and `npm run lint` pass. Deployed and
+- [x] `lib/fraud/**` still never imports `lib/ai` (grep).
+- [x] `npm test`, `npm run build` and `npm run lint` pass. Deployed and
       checked on the public URL.
 
 ## Built (filled in after completion)
 
--
+Sun 15 Nov.
+
+- `lib/ai/case-brief-template.ts` (pure: `CaseBrief`, `CaseFacts`,
+  `templateBrief()`, 3 tests → 63 total) and `lib/ai/case-brief.ts`
+  (`buildFacts`, `writeCaseBrief` which never throws, `parseBrief`).
+  `IncidentDetail` replaces the stub; `getOpsState()` now returns `brief`
+  and the related `action`.
+- **Triggers via `after()`:** card authorisation (when an incident was
+  created), `/api/chat` (emergency and shield cards), the compromised-agent
+  route, and also **`/api/notifications/[id]/respond`** (the customer's
+  answer changes the next step). `respondToNotification` now returns
+  `incidentId`. `lib/fraud` still imports nothing from `lib/ai`.
+- **Facts stay authoritative:** `measures` always come from the incident
+  record (the model shortened them in testing), and the model gets the
+  template's `suggestedNextStep` to word (its own next step after "it
+  wasn't me" was vague).
+- Verified online and offline: Nova → AI brief in about 3 s (template in
+  0.7 s offline); after deny → rewritten, "keep the card locked, issue a
+  replacement card…"; steps 12–13 → the brief mentions the shared code, the
+  Nova event and all 5 measures; `/ops` shows the brief with "AI-generated
+  summary · decisions are made by the rules engine" or "Template summary ·
+  AI unavailable". The decision, card lock and measures are unchanged.
