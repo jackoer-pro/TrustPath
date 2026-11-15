@@ -11,7 +11,7 @@ the bank console. Right: demo controls.
 2. Click **Reset demo**: Everyday $1,500.00, Goal Saver $4,200.00, empty chat.
 3. PIN for every approval: `DEMO_PIN` (**1234** if not set).
 4. Turn the computer's sound on (the briefing is spoken). Optional:
-   `npm run eval -- https://trust-path-five.vercel.app` (30 automated cases; resets at the end).
+   `npm run eval -- https://trust-path-five.vercel.app` (31 automated cases; resets at the end). Full checklist: `context/test-script.md`.
 
 **Order matters:** Act 4 turns on emergency protection (payments paused, card
 locked). Everything that pays or buys comes before it.

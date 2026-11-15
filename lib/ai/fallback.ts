@@ -51,6 +51,7 @@ const MUST_USE: Record<string, string> = {
   prepare_payday_plan: "prepare_payday_plan",
   get_safe_to_spend: "get_safe_to_spend",
   update_financial_preference: "update_financial_preference",
+  get_briefing: "get_briefing",
 };
 
 /** The deterministic tool the rule-based parser says this message needs, or null. */
@@ -87,6 +88,10 @@ export async function runFallback(history: ChatMessage[]): Promise<AgentResult> 
     } else if (call.name === "view_product") {
       const p = r.forModel as ProductOut;
       reads.push(`I read the ${p.merchant} page for the ${p.name} (${p.price}).${p.notice ? " The page also had hidden instructions; I ignored them." : ""}`);
+      if (r.card) cards.push(r.card);
+    } else if (call.name === "get_briefing") {
+      const b = r.forModel as { greeting: string; lines: string[] };
+      sentences.push(b.greeting, ...b.lines);
       if (r.card) cards.push(r.card);
     } else if (call.name === "get_safe_to_spend") {
       const s = r.forModel as { explanation: string; affordability?: string };

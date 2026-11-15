@@ -197,6 +197,14 @@ await check("Morning briefing: Mum's birthday + last year's $50, rent before pay
   expect(a?.status === "pending_approval" && a.amountCents === 5000 && a.toName === "Linh Nguyen", JSON.stringify(a && [a.status, a.toName]));
 });
 
+await check("'Good morning' in chat → the personal briefing card (no payment prepared)", async () => {
+  const r = seen(await chat("Good morning"));
+  const b = (r?.cards ?? []).find((c) => c.type === "briefing");
+  expect(b?.lines?.[0] === "It's Mum's birthday today. Last year you sent her $50.00. Want to send her something?", JSON.stringify(b ?? r.reply));
+  expect(receipts(r).length === 0, "nothing should be prepared");
+  expect(/birthday/i.test(r.reply), `reply: ${r.reply}`);
+});
+
 // ─── In-app shop and deal finder (Unit 29) ──────────────────────────────────
 const dealsCard = (r) => (r?.cards ?? []).find((c) => c.type === "deals");
 
