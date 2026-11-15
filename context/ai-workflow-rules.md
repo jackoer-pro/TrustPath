@@ -68,6 +68,9 @@ a change is instructed, explain it in the summary.
 - The tool list in `lib/ai/tools.ts`. Adding a tool that can execute, approve,
   unlock or change rules is **never** allowed.
 - `app/api/actions/[id]/approve/route.ts` and `app/api/ops/incidents/[id]/resolve/route.ts`.
+- `lib/ops/staff.ts` (the only code that unlocks cards or lifts restrictions)
+  and `lib/protect/emergency.ts` (lockdown). `lib/ai/no-staff-path.test.ts`
+  guards that the AI has no path to either staff action.
 
 ## Protected Files
 

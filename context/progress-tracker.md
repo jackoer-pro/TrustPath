@@ -8,14 +8,14 @@ Update this file after every meaningful implementation change.
   **Act 1 passes end to end on the public URL.** Units 13–16 done;
   **golden-path steps 1–7 pass online and offline**, and the hijack block is
   demoable on demand. Units 17–18 done; **golden-path step 10 works
-  through the API.** Phase C: Units 19–24 done; **steps 10–17 pass online
-  and offline** (customer app, live console and the AI case brief). Unit 25
-  spec drafted, awaiting clarification.
+  through the API.** Phase C: Units 19–25 done; **golden-path steps 1–18
+  all pass** (customer app, live console, AI case brief, staff resolve).
+  Unit 26 spec drafted, awaiting clarification.
 
 ## Current Goal
 
 - Answer the "Clarify before building" questions in
-  `context/feature_specs/25-staff-resolve.md`, then build Unit 25.
+  `context/feature_specs/26-demo-harness.md`, then build Unit 26.
 
 ## Schedule
 
@@ -70,8 +70,8 @@ before it's built. What each unit contains and when it counts as done is in
 - [x] 22 Protect tab (step 15)
 - [x] 23 Bank console lists (steps 8, 11)
 - [x] 24 AI case brief (step 17)
-- [ ] 25 Staff review and resolve (Act 4 done) — spec drafted
-- [ ] 26 Demo harness (step 19)
+- [x] 25 Staff review and resolve (Act 4 done)
+- [ ] 26 Demo harness (step 19) — spec drafted
 
 **Phase D — Rehearsal**
 
@@ -192,6 +192,11 @@ before it's built. What each unit contains and when it counts as done is in
   customer's answer and on escalation; `IncidentDetail` in `/ops`. Measures
   and the next step stay anchored to the facts. **Step 17 works online and
   offline.** See `feature_specs/24-case-brief.md` → Built.
+- **Unit 25 Staff review and resolve** (Sun 15 Nov): `lib/ops/staff.ts`,
+  review/resolve routes (demo key), a staff key field, buttons and a confirm
+  dialog in the console, and a test that the AI has no path to staff
+  actions. **Step 18 / Act 4 passes.** See
+  `feature_specs/25-staff-resolve.md` → Built.
 
 ## In Progress
 
@@ -199,10 +204,10 @@ before it's built. What each unit contains and when it counts as done is in
 
 ## Next Up
 
-- Developer answers the questions in `25-staff-resolve.md`.
+- Developer answers the questions in `26-demo-harness.md`.
 - Developer: set Vercel `DEMO_ADMIN_KEY` to the generated production key and
   redeploy (see `12-first-deploy.md` → Built).
-- Build and verify Unit 25, tick it above, then write `26-demo-harness.md`.
+- Build and verify Unit 26, tick it above, then write `27-rehearsal.md`.
 
 ## Open Questions
 
