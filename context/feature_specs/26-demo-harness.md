@@ -1,6 +1,6 @@
 # 26 — Demo harness
 
-Status: draft
+Status: done
 
 ## Goal
 
@@ -55,31 +55,54 @@ under 3 seconds. **Step 19 passes and the full golden path runs from
 
 ## Clarify before building
 
-1. **Reset reloads both iframes**, because the customer chat lives in the
-   page's memory and would otherwise still show the last take. OK?
-2. **One key for everything:** the harness key field and the console's
-   staff key share the same tab storage, so you type it once. OK?
-3. **Migration `0002_seed_times.sql`** (security-sensitive: migrations)
-   replaces `reset_demo()` only to spread the seed card times over 14 days.
-   You'd run it in the Supabase SQL editor, like 0001. OK?
-4. **Phone scale ×1.2** (about 1032 px tall in a 1080 recording), and the
-   staggered ticks on the Emergency card. OK?
+Answered by the developer, Sun 15 Nov: all four proposals accepted.
+
+1. Reset reloads both iframes.
+2. One key for the harness and the console.
+3. Migration 0002 approved, but turned out unnecessary (see Built).
+4. Phone ×1.2 and staggered Emergency ticks.
 
 ## Verify when done
 
-- [ ] At 1920×1080: three columns, no scrollbars on the page, the phone
+- [x] At 1920×1080: three columns, no scrollbars on the page, the phone
       about 1030 px tall and readable.
-- [ ] Without the key, the buttons answer 401 in the response box; with it,
+- [x] Without the key, the buttons answer 401 in the response box; with it,
       each works and the iframes update within 3 s.
-- [ ] The full golden path (steps 1–18) runs from `/demo`, online and
+- [x] The full golden path (steps 1–18) runs from `/demo`, online and
       offline.
-- [ ] "Reset demo" → seed state in under 3 s; both iframes are back to step
+- [x] "Reset demo" → seed state in under 3 s; both iframes are back to step
       1 (empty chat, Protected, no incidents).
-- [ ] After migration 0002: the console shows the seed events on different
-      days; the fraud tests still pass (the average is unchanged).
-- [ ] `npm test`, `npm run build` and `npm run lint` pass. Deployed and
+- [x] ~~After migration 0002~~ Not needed: the seed events were already on
+      different days (see Built); the console now shows their dates.
+- [x] `npm test`, `npm run build` and `npm run lint` pass. Deployed and
       checked on the public URL.
 
 ## Built (filled in after completion)
 
--
+Sun 15 Nov.
+
+- `components/demo/DemoHarness.tsx` (`app/demo/page.tsx` renders it): phone
+  iframe 420×860 scaled ×1.2 (1032 px) in a frame, `/ops` iframe, control
+  panel with the four buttons and the response box (status + ms + JSON).
+  A successful reset bumps a key that reloads both iframes.
+- `components/ops/staffKey.ts`: one `sessionStorage` key for the harness
+  and the console's staff key (`useSyncExternalStore` + the `storage`
+  event, so typing it in the harness fills the console live).
+- **No migration.** `reset_demo()` already spreads the seed card events over
+  1–29 days; they only *looked* identical because the console showed time of
+  day only, and every seed event is at the same hour. `clock()` now shows
+  "12 Nov 05:47" for anything not from today.
+- Console at harness width (~1000 px): two columns from `lg`, the sidebar
+  only from `xl`, and event rows with merchant/amount/decision on line one
+  and time/channel/card/reasons on line two (merchant names no longer
+  truncate).
+- `EmergencyCard` ticks rise in one by one (150 ms stagger,
+  `animation-fill-mode: both`); reduced motion shows them at once.
+- `context/demo-script.md`: the operator script, step by step.
+- Verified in headless Chrome at 1920×1080, online and offline, driving both
+  iframes: no page scroll, phone 1032 px; no key → 401; the key typed once
+  reaches the console; Acts 1–4 (payday → $1,080, headphones → $951 + shield,
+  simulated hijack, Nova → alert → deny → emergency → $50 blocked, case
+  brief, mark investigated, lift & unlock); reset in 150–260 ms with both
+  panes back to step 1. No console errors. The Unit 23 console check still
+  passes (one assertion updated for the Unit 24 severity badge).

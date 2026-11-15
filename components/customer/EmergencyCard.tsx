@@ -14,8 +14,13 @@ export function EmergencyCard({ card }: { card: EmergencyCardData }) {
         Emergency protection is on
       </p>
       <ul className="mt-3 space-y-2">
-        {card.measures.map((m) => (
-          <li key={m.label} className="flex items-start gap-2 text-sm text-ink">
+        {card.measures.map((m, i) => (
+          // Ticks appear one by one (ui-context.md: 150 ms stagger); reduced motion shows them at once.
+          <li
+            key={m.label}
+            className="flex animate-rise items-start gap-2 text-sm text-ink"
+            style={{ animationDelay: `${i * 150}ms`, animationFillMode: "both" }}
+          >
             <CircleCheck className="mt-0.5 h-4 w-4 shrink-0 text-risk-low" aria-hidden />
             {m.label}
           </li>

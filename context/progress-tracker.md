@@ -8,14 +8,14 @@ Update this file after every meaningful implementation change.
   **Act 1 passes end to end on the public URL.** Units 13–16 done;
   **golden-path steps 1–7 pass online and offline**, and the hijack block is
   demoable on demand. Units 17–18 done; **golden-path step 10 works
-  through the API.** Phase C: Units 19–25 done; **golden-path steps 1–18
-  all pass** (customer app, live console, AI case brief, staff resolve).
-  Unit 26 spec drafted, awaiting clarification.
+  through the API.** Phase C complete: Units 19–26 done; **the whole golden
+  path (steps 1–19) runs from `/demo`, online and offline.** Unit 27
+  (rehearsal) spec drafted, awaiting clarification.
 
 ## Current Goal
 
 - Answer the "Clarify before building" questions in
-  `context/feature_specs/26-demo-harness.md`, then build Unit 26.
+  `context/feature_specs/27-rehearsal.md`, then run Unit 27.
 
 ## Schedule
 
@@ -71,11 +71,11 @@ before it's built. What each unit contains and when it counts as done is in
 - [x] 23 Bank console lists (steps 8, 11)
 - [x] 24 AI case brief (step 17)
 - [x] 25 Staff review and resolve (Act 4 done)
-- [ ] 26 Demo harness (step 19) — spec drafted
+- [x] 26 Demo harness (step 19)
 
 **Phase D — Rehearsal**
 
-- [ ] 27 Rehearsal and polish (feature freeze 12:00pm Tue 17 Nov)
+- [ ] 27 Rehearsal and polish (feature freeze 12:00pm Tue 17 Nov) — spec drafted
 
 **Stretch (only if 27 is done)**
 
@@ -197,6 +197,11 @@ before it's built. What each unit contains and when it counts as done is in
   dialog in the console, and a test that the AI has no path to staff
   actions. **Step 18 / Act 4 passes.** See
   `feature_specs/25-staff-resolve.md` → Built.
+- **Unit 26 Demo harness** (Sun 15 Nov): `/demo` at 1920×1080 with the phone
+  scaled ×1.2, the console, four demo buttons, a shared demo/staff key, and
+  reset that reloads both panes (about 0.2 s). Operator script in
+  `context/demo-script.md`. **Steps 1–19 run from `/demo`.** See
+  `feature_specs/26-demo-harness.md` → Built.
 
 ## In Progress
 
@@ -204,10 +209,10 @@ before it's built. What each unit contains and when it counts as done is in
 
 ## Next Up
 
-- Developer answers the questions in `26-demo-harness.md`.
+- Developer answers the questions in `27-rehearsal.md`.
 - Developer: set Vercel `DEMO_ADMIN_KEY` to the generated production key and
   redeploy (see `12-first-deploy.md` → Built).
-- Build and verify Unit 26, tick it above, then write `27-rehearsal.md`.
+- Run Unit 27, tick it above; then the stretch units (28–29) only if time allows.
 
 ## Open Questions
 
