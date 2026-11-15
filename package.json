@@ -8,7 +8,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --test \"lib/**/*.test.ts\""
+    "test": "node --test \"lib/**/*.test.ts\"",
+    "eval": "node --env-file=.env.local scripts/eval.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.119.0",

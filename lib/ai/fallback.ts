@@ -62,7 +62,7 @@ export async function runFallback(history: ChatMessage[]): Promise<AgentResult> 
       sentences.push(`Your latest transactions: ${list(tx.slice(0, 3).map((t) => `${t.description} ${t.amount}`))}.`);
     } else if (call.name === "view_product") {
       const p = r.forModel as ProductOut;
-      reads.push(`I read the ${p.merchant} page for the ${p.name} (${p.price}).${p.notice ? " It contained hidden instructions, which I ignored." : ""}`);
+      reads.push(`I read the ${p.merchant} page for the ${p.name} (${p.price}).${p.notice ? " The page also had hidden instructions; I ignored them." : ""}`);
       if (r.card) cards.push(r.card);
     } else if (call.name === "search_safety_guide") {
       const s = r.forModel as SafetyOut;
