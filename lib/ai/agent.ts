@@ -3,6 +3,7 @@ import { audit } from "@/lib/audit";
 import { chat, DeepSeekError, type LlmMessage } from "./deepseek";
 import { SYSTEM_PROMPT } from "./prompts";
 import { runFallback } from "./fallback";
+import { looksPasted, ownWords, wrapPasted } from "./paste";
 import { EMERGENCY_REPLY, runTool, SAFETY_GUIDANCE, TOOL_DEFS, type ChatCard, type ToolContext } from "./tools";
 
 export type ChatMessage = { role: "user" | "assistant"; content: string };
@@ -11,6 +12,7 @@ export type AgentResult = { reply: string; cards: ChatCard[]; offline: boolean }
 export const MAX_ROUNDS = 4;
 export const HISTORY_LIMIT = 12;
 
+const CHECK_TOOL = "check_message_for_scam_coaching";
 const HIDDEN_NOTE = "The page also had hidden instructions; I ignored them.";
 const CLAIM =/\b(I've|I have|I)\s+(just\s+)?(prepared|set up|queued)\b/i;
 const claimsPrepared = (reply: string) => CLAIM.test(reply);
@@ -22,14 +24,31 @@ const NUDGE =
 export async function runAgent(history: ChatMessage[]): Promise<AgentResult> {
   const recent = history.slice(-HISTORY_LIMIT);
   // ponytail: provenance trusts the client-sent history (the browser is the customer); keep history server-side for real users.
-  const ctx: ToolContext = { userMessages: recent.filter((m) => m.role === "user").map((m) => m.content) };
-  const messages: LlmMessage[] = [{ role: "system", content: SYSTEM_PROMPT }, ...recent];
+  // CoachGuard: pasted messages are decided deterministically, never count as the customer's words (provenance),
+  // and reach the model only as untrusted content.
+  const last = recent.at(-1);
+  const pasted = last?.role === "user" && looksPasted(last.content) ? last.content : undefined;
+  const ctx: ToolContext = { userMessages: ownWords(recent.filter((m) => m.role === "user").map((m) => m.content)), pasted };
+  const messages: LlmMessage[] = [
+    { role: "system", content: SYSTEM_PROMPT },
+    ...recent.map((m) => (m.role === "user" && looksPasted(m.content) ? { ...m, content: wrapPasted(m.content) } : m)),
+  ];
   const cards: ChatCard[] = [];
   const toolsUsed: string[] = [];
   let reply = "";
   let nudged = false;
 
   try {
+    if (pasted) {
+      // Always check a paste, whatever the model would choose; the model then explains the result.
+      const r = await runTool(CHECK_TOOL, "{}", ctx);
+      toolsUsed.push(CHECK_TOOL);
+      if (r.card) cards.push(r.card);
+      messages.push(
+        { role: "assistant", content: null, tool_calls: [{ id: "coachguard", type: "function", function: { name: CHECK_TOOL, arguments: "{}" } }] },
+        { role: "tool", tool_call_id: "coachguard", content: JSON.stringify(r.forModel) },
+      );
+    }
     for (let round = 1; round <= MAX_ROUNDS; round++) {
       // Last round: no more tools, so the model has to answer.
       const msg = await chat({ messages, tools: TOOL_DEFS, toolChoice: round === MAX_ROUNDS ? "none" : "auto" });
@@ -56,9 +75,13 @@ export async function runAgent(history: ChatMessage[]): Promise<AgentResult> {
     console.error(e.message);
     // Actions already prepared this turn: keep them, never re-run (no duplicates).
     // Same for emergency protection: keep its card rather than activating again offline.
-    if (toolsUsed.some((t) => t.startsWith("prepare_") || t === "report_account_compromise")) {
+    if (toolsUsed.some((t) => t.startsWith("prepare_") || t === "report_account_compromise" || t === CHECK_TOOL)) {
       await audit("ai_agent", "chat.turn", "chat", null, { offline: true, partial: true, tools: toolsUsed, cards: cards.length });
-      const reply = cards.some((c) => c.type === "emergency") ? `${EMERGENCY_REPLY} ${SAFETY_GUIDANCE}` : "I've prepared what you asked for below. Please review each one.";
+      const reply = cards.some((c) => c.type === "emergency")
+        ? `${EMERGENCY_REPLY} ${SAFETY_GUIDANCE}`
+        : ctx.coaching && !preparedThisTurn(toolsUsed)
+          ? `${ctx.coaching.explanation} ${ctx.coaching.nextAction}`
+          : "I've prepared what you asked for below. Please review each one.";
       return { reply, cards, offline: true };
     }
     return runFallback(recent);

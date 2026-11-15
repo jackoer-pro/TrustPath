@@ -8,6 +8,7 @@ import { preparePurchase, prepareTransfer, type PreparedAction } from "@/lib/ban
 import { DEMO_PROFILE_ID } from "@/lib/banking/constants";
 import { createIncident } from "@/lib/protect/incidents";
 import { activate } from "@/lib/protect/emergency";
+import { analyseMessage, type CoachingResult } from "@/lib/protect/coaching/analyse";
 import type { ToolDef } from "./deepseek";
 import { readProduct } from "./product-view";
 import { searchSafety } from "./knowledge";
@@ -28,10 +29,19 @@ export const SAFETY_GUIDANCE =
 export type ShieldCardData = { type: "shield"; id: string; merchant: string; source: string; removed: string };
 export type EmergencyCardData = { type: "emergency"; incidentId: string; measures: { label: string; done: boolean }[] };
 export type SourcesCardData = { type: "sources"; items: string[] };
-export type ChatCard = { type: "receipt"; action: PreparedAction } | ShieldCardData | EmergencyCardData | SourcesCardData;
+export type CoachingCardData = { type: "coaching" } & CoachingResult;
+export type ChatCard = { type: "receipt"; action: PreparedAction } | ShieldCardData | EmergencyCardData | SourcesCardData | CoachingCardData;
 
 /** Per chat turn. `injectionReported` keeps it to one incident + one shield card per turn. */
-export type ToolContext = { userMessages: string[]; injectionReported?: boolean; sourcesShown?: boolean };
+export type ToolContext = {
+  /** The customer's own words for provenance (pasted messages already removed, see lib/ai/paste.ts). */
+  userMessages: string[];
+  injectionReported?: boolean;
+  sourcesShown?: boolean;
+  /** CoachGuard: the pasted message or transcript in this turn, if any. */
+  pasted?: string;
+  coaching?: CoachingResult;
+};
 export type ToolResult = { forModel: unknown; card?: ChatCard };
 
 type Tool<S extends z.ZodType> = {
@@ -279,7 +289,15 @@ const reportAccountCompromise = tool({
     },
   },
   args: z.object({ customerStatement: z.string().trim().min(1).max(1000) }),
-  async run({ customerStatement }) {
+  async run({ customerStatement }, ctx) {
+    // A pasted message alone must never lock the account (CoachGuard): only the customer's own report does.
+    if (ctx.pasted && !/\bI\s+(gave|told|shared|sent|read)\b/i.test(ctx.pasted))
+      return {
+        forModel: {
+          error:
+            "Not activated: this is a pasted message, not Alex's own report. Ask Alex whether they shared any codes or passwords; if they say yes in their own words, protection can be turned on.",
+        },
+      };
     const r = await activate(DEMO_PROFILE_ID, customerStatement);
     return {
       card: { type: "emergency", incidentId: r.incidentId, measures: r.measures },
@@ -322,6 +340,35 @@ const searchSafetyGuide = tool({
   },
 });
 
+const checkMessage = tool({
+  def: {
+    type: "function",
+    function: {
+      name: "check_message_for_scam_coaching",
+      description:
+        "CoachGuard: check the message or call transcript Alex pasted for scam-coaching signs (being told what to say to the bank, to hide things, to move money to a safe account, to install remote access, to share codes, to keep secrets, or pressure). Returns evidence and the safe next step. It can hold a payment to a new payee; it never locks accounts.",
+      parameters: { type: "object", properties: {} },
+    },
+  },
+  args: z.object({}).loose(),
+  async run(_args, ctx) {
+    if (!ctx.pasted) return { forModel: { error: "There's no pasted message in this turn. Ask Alex to paste it." } };
+    const first = !ctx.coaching;
+    const r = (ctx.coaching ??= await analyseMessage(ctx.pasted, DEMO_PROFILE_ID));
+    return {
+      ...(first && { card: { type: "coaching", ...r } }),
+      forModel: {
+        assessment: r.assessment,
+        signals: r.signals.map((s) => ({ type: s.type, evidence: s.evidence })),
+        explanation: r.explanation,
+        nextAction: r.nextAction,
+        paymentsHeld: r.heldPayments,
+        note: "Never say the message is definitely a scam or fraud. The card shows the evidence; reply in 1–2 sentences with the next step.",
+      },
+    };
+  },
+});
+
 const TOOLS = [
   getAccounts,
   getRecentTransactions,
@@ -331,6 +378,7 @@ const TOOLS = [
   preparePurchaseTool,
   reportAccountCompromise,
   searchSafetyGuide,
+  checkMessage,
 ];
 export const TOOL_DEFS: ToolDef[] = TOOLS.map((t) => t.def);
 

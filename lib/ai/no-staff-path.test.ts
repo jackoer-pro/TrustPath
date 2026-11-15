@@ -20,3 +20,12 @@ test("lib/ai never imports staff actions, approval or the resolve route", () => 
     assert.doesNotMatch(s, /complete_action/, f);
   }
 });
+
+test("7. CoachGuard can't approve, unlock, execute or lock accounts", () => {
+  const coaching = join(dir, "../protect/coaching");
+  for (const f of readdirSync(coaching).filter((f) => f.endsWith(".ts") && !f.endsWith(".test.ts"))) {
+    const s = readFileSync(join(coaching, f), "utf8");
+    assert.doesNotMatch(s, /from\s+["'][^"']*(ops\/staff|banking\/approve|protect\/emergency|api\/ops)/, f);
+    assert.doesNotMatch(s, /complete_action|status:\s*"(active|completed|approved)"|outgoing_paused|\.from\("cards"\)/, f);
+  }
+});

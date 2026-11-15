@@ -286,6 +286,7 @@ Evaluated in order. The first **block** wins; holds and warnings accumulate.
 | R5  | Insufficient funds    | `amount > from_account.balance`                                           | block, medium                               |
 | R6  | Large amount          | `amount > $2,000` **or** `> 50%` of the source balance (not own-account transfers) | hold, high                          |
 | R7  | Unverified payee      | `payee.verified = false`                                                  | step_up, medium (warning on receipt)        |
+| R8  | Scam coaching (CoachGuard) | a strong CoachGuard assessment in the last hour, and a transfer to a payee added < 7 days ago or an unknown recipient (established payee: warning) | hold, high (established payee: step_up, medium) |
 | —   | Otherwise             | —                                                                         | step_up, low (every action needs approval)  |
 
 **Intent provenance** (`provenance.ts`) checks the **last 3 user-role

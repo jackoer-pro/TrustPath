@@ -10,10 +10,12 @@ export type PolicyContext = {
   outgoingPaused: boolean;
   sourceBalanceCents: number;
   /** Transfers: the resolved recipient, or null when `to` didn't resolve. Purchases: null. */
-  recipient: { kind: "own_account" | "person" | "biller"; verified: boolean } | null;
+  recipient: { kind: "own_account" | "person" | "biller"; verified: boolean; addedDaysAgo?: number } | null;
   /** Purchases only. */
   cardStatus?: "active" | "temporarily_locked" | "locked";
   provenance: Provenance;
+  /** CoachGuard: a recent assessment of a message the customer shared. Evidence only; the decision is made here. */
+  coaching?: { strong: boolean; summary: string } | null;
 };
 
 export type Assessment = {
@@ -24,12 +26,29 @@ export type Assessment = {
 };
 
 export const LARGE_AMOUNT_CENTS = 200_000;
+/** A payee added within this many days counts as new for CoachGuard (R8). */
+export const NEW_PAYEE_DAYS = 7;
 
 const RANK: Record<RiskLevel, number> = { low: 0, medium: 1, high: 2, critical: 3 };
 
+type Hit = { decision: Decision; risk: RiskLevel; reason: string };
+
+/** R8 on its own, so CoachGuard can re-check payments that were prepared before the message was shared. */
+export function coachingHit(action: PolicyAction, ctx: Pick<PolicyContext, "recipient" | "coaching">): Hit | null {
+  if (action.type !== "transfer" || !ctx.coaching?.strong || ctx.recipient?.kind === "own_account") return null;
+  const isNew = !ctx.recipient || (ctx.recipient.addedDaysAgo ?? Infinity) < NEW_PAYEE_DAYS;
+  return isNew
+    ? {
+        decision: "hold",
+        risk: "high",
+        reason: `Possible scam coaching: ${ctx.coaching.summary}. This payee is new, so our team will check with you before it goes ahead.`,
+      }
+    : { decision: "step_up", risk: "medium", reason: `Possible scam coaching: ${ctx.coaching.summary}. Only approve if you're sure.` };
+}
+
 /** Every rule is evaluated so reasons are complete; any block wins, then any hold, else step-up (every action needs approval). */
 export function assess(action: PolicyAction, ctx: PolicyContext): Assessment {
-  const hits: { decision: Decision; risk: RiskLevel; reason: string }[] = [];
+  const hits: Hit[] = [];
   const flags: Assessment["flags"] = [];
   const own = ctx.recipient?.kind === "own_account";
 
@@ -56,6 +75,9 @@ export function assess(action: PolicyAction, ctx: PolicyContext): Assessment {
   // R7 Unverified payee
   if (ctx.recipient && !ctx.recipient.verified)
     hits.push({ decision: "step_up", risk: "medium", reason: "This payee hasn't been verified yet." });
+  // R8 Scam coaching (CoachGuard): strong signs + a new or unknown recipient → hold; an established payee → warning.
+  const coaching = coachingHit(action, ctx);
+  if (coaching) hits.push(coaching);
 
   const decision: Decision = hits.some((h) => h.decision === "block")
     ? "block"

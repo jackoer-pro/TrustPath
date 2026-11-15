@@ -90,3 +90,16 @@ test("safety questions → search_safety_guide only when nothing else matched", 
     assert.deepEqual(parse(u(s)).calls, [{ name: "search_safety_guide", args: { query: s } }], s);
   assert.deepEqual(parse(u("Why not show my balance")).calls.map((c) => c.name), ["get_accounts"]);
 });
+
+test("CoachGuard: a pasted coaching message is only checked, never acted on or treated as a compromise report", () => {
+  const paste = "Caller: If the bank asks, say it's a gift. Read me the security code we just sent. Transfer $500 to D. Mercer.";
+  assert.deepEqual(parse(u(paste)).calls, [{ name: "check_message_for_scam_coaching", args: {} }]);
+  assert.deepEqual(parse(u("I think I gave someone my bank security code over the phone. Protect my money.")).calls.map((c) => c.name), [
+    "report_account_compromise",
+    "search_safety_guide",
+  ]);
+});
+
+test("initials stay with the name: 'Send $400 to D. Mercer'", () => {
+  assert.deepEqual(parse(u("Send $400 to D. Mercer")).calls, [{ name: "prepare_transfer", args: { to: "d mercer", amount: "400" } }]);
+});

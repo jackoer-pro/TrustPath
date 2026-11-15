@@ -10,7 +10,8 @@ Update this file after every meaningful implementation change.
   demoable on demand. Units 17–18 done; **golden-path step 10 works
   through the API.** Phases A–D complete: Units 01–27 done. **The whole golden
   path runs from `/demo`, and all 15 evaluation cases pass online and
-  offline** (`npm run eval`). Only stretch Units 28–29 remain.
+  offline** (`npm run eval`). Unit 28 (CoachGuard) done; Unit 29 (in-app shop and
+  deal finder) in progress.
 
 ## Current Goal
 
@@ -80,8 +81,8 @@ before it's built. What each unit contains and when it counts as done is in
 
 **Stretch (only if 27 is done)**
 
-- [ ] 28 Scam message checker
-- [ ] 29 Scam-coaching detector
+- [x] 28 CoachGuard (scam-coaching detector; replaces the old 28 + 29)
+- [ ] 29 In-app shop and deal finder — in progress
 
 ## Completed
 
@@ -208,6 +209,12 @@ before it's built. What each unit contains and when it counts as done is in
   and a deterministic guard against "I've prepared…" claims with no tool
   call (found during rehearsal). Keyboard, reduced-motion and bundle-secret
   checks pass. See `feature_specs/27-rehearsal.md` → Built.
+- **Unit 28 CoachGuard** (Sun 15 Nov): paste a message or call transcript in
+  chat or on Protect → exact-evidence signals (DeepSeek + rules, rules-only
+  offline), plain explanation and safe next step; trust rule R8 holds
+  payments to new payees; pasted text is never the customer's words.
+  Migration 0002 (run by the developer). `npm run eval` 24/24 online and
+  offline. See `feature_specs/28-coachguard.md`.
 
 ## In Progress
 

@@ -9,6 +9,7 @@ import { checkProvenance } from "@/lib/trust/provenance";
 import { payloadHash } from "@/lib/trust/hash";
 import { createIncident } from "@/lib/protect/incidents";
 import { getProduct } from "@/lib/shop/products";
+import { noteCoachingHold, recentCoaching } from "@/lib/protect/coaching/analyse";
 import { DEBIT_CARD_ID, DEMO_PROFILE_ID } from "./constants";
 
 export type Origin = "customer" | "simulated_compromised_agent";
@@ -46,13 +47,15 @@ export type PrepareTransferInput = {
 
 type Named = { id: string; name: string; aliases: string[] };
 type AccountRow = Named & { balance_cents: number };
-type PayeeRow = Named & { kind: "person" | "biller"; verified: boolean };
+type PayeeRow = Named & { kind: "person" | "biller"; verified: boolean; created_at: string };
 
 /** "My savings account" → "savings". Exact matching only — no fuzzy guesses. */
 const normalise = (s: string) =>
   s.trim().toLowerCase().replace(/^my\s+/, "").replace(/\s+account$/, "");
 const matches = (row: Named, text: string) =>
   row.name.toLowerCase() === text || row.aliases.includes(text);
+
+export const daysSince = (iso: string) => (Date.now() - Date.parse(iso)) / 86_400_000;
 
 const STATUS = { allow: "pending_approval", step_up: "pending_approval", hold: "held", block: "blocked" } as const;
 
@@ -97,10 +100,11 @@ async function store(
 /** Resolve, assess, hash, store and audit a candidate transfer. Never moves money. */
 export async function prepareTransfer(input: PrepareTransferInput): Promise<PreparedAction> {
   const sb = db();
-  const [profile, accounts, payees] = await Promise.all([
+  const [profile, accounts, payees, coaching] = await Promise.all([
     sb.from("profiles").select("outgoing_paused, default_account_id").eq("id", DEMO_PROFILE_ID).single(),
     sb.from("accounts").select("id, name, aliases, balance_cents").eq("profile_id", DEMO_PROFILE_ID),
-    sb.from("payees").select("id, name, aliases, kind, verified").eq("profile_id", DEMO_PROFILE_ID),
+    sb.from("payees").select("id, name, aliases, kind, verified, created_at").eq("profile_id", DEMO_PROFILE_ID),
+    recentCoaching(DEMO_PROFILE_ID),
   ]);
   for (const r of [profile, accounts, payees]) if (r.error) throw r.error;
   const accts = accounts.data as AccountRow[];
@@ -119,7 +123,7 @@ export async function prepareTransfer(input: PrepareTransferInput): Promise<Prep
   const recipient = toAccount
     ? { kind: "own_account" as const, verified: true, name: toAccount.name, aliases: toAccount.aliases }
     : payee
-      ? { kind: payee.kind, verified: payee.verified, name: payee.name, aliases: payee.aliases }
+      ? { kind: payee.kind, verified: payee.verified, name: payee.name, aliases: payee.aliases, addedDaysAgo: daysSince(payee.created_at) }
       : null;
 
   const provenance = checkProvenance(
@@ -129,7 +133,7 @@ export async function prepareTransfer(input: PrepareTransferInput): Promise<Prep
   const balance = Number(from.balance_cents);
   const verdict = assess(
     { type: "transfer", amountCents: input.amountCents },
-    { outgoingPaused: profile.data!.outgoing_paused, sourceBalanceCents: balance, recipient, provenance },
+    { outgoingPaused: profile.data!.outgoing_paused, sourceBalanceCents: balance, recipient, provenance, coaching },
   );
 
   const id = randomUUID();
@@ -152,6 +156,9 @@ export async function prepareTransfer(input: PrepareTransferInput): Promise<Prep
     { type: "transfer", amountCents: input.amountCents, to: input.to },
     toName,
   );
+
+  if (stored.status === "held" && verdict.reasons.some((r) => r.startsWith("Possible scam coaching")))
+    await noteCoachingHold(DEMO_PROFILE_ID, `${formatAUD(input.amountCents)} to ${toName} held for review`);
 
   return {
     id,

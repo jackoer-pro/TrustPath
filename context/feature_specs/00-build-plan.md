@@ -120,8 +120,8 @@ on are done. "Act" and "step" refer to the golden path in
 
 | #  | Unit                         | Builds                                                                             | Depends on |
 | -- | ---------------------------- | ---------------------------------------------------------------------------------- | ---------- |
-| 28 | Scam message checker         | Protect tab: paste an SMS or email → verdict plus indicators (never "proven")      | 27         |
-| 29 | Scam-coaching detector       | "Move money to a safe account" phrases put a cooling-off hold on the payment       | 27         |
+| 28 | CoachGuard                   | Paste a message or call transcript (chat or Protect) → signals with exact evidence, plain explanation, safe next step; trust rule R8 holds payments to new payees (replaces the old 28 + 29) | 27         |
+| 29 | In-app shop and deal finder  | Shop tab with several merchants; "find the best deal" ranks reliability and price deterministically; buy through the same Trust Receipt and PIN | 28         |
 
 ## Why Units Are Split This Way
 
