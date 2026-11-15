@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useSyncExternalStore } from "react";
+import { useState } from "react";
 import { Activity, ScrollText, ShieldAlert } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { AuditLog } from "./AuditLog";
 import { CardEventList } from "./CardEventList";
 import { IncidentDetail } from "./IncidentDetail";
 import { IncidentList } from "./IncidentList";
+import { saveStaffKey, useStaffKey } from "./staffKey";
 import { useOpsState } from "./useOpsState";
 
 const nav = [
@@ -15,36 +16,10 @@ const nav = [
   { label: "Audit", Icon: ScrollText },
 ];
 
-// Staff key: kept for this tab only (sessionStorage), with an in-memory fallback when storage is blocked.
-const STAFF_KEY = "trustpath-staff-key";
-let staffKeyMemo: string | null = null;
-const keyListeners = new Set<() => void>();
-const readStaffKey = () => {
-  if (staffKeyMemo === null) {
-    try {
-      staffKeyMemo = sessionStorage.getItem(STAFF_KEY) ?? "";
-    } catch {
-      staffKeyMemo = "";
-    }
-  }
-  return staffKeyMemo;
-};
-function saveKey(k: string) {
-  staffKeyMemo = k;
-  try {
-    sessionStorage.setItem(STAFF_KEY, k);
-  } catch {}
-  keyListeners.forEach((l) => l());
-}
-const subscribeKey = (l: () => void) => {
-  keyListeners.add(l);
-  return () => keyListeners.delete(l);
-};
-
 export function OpsView() {
   const { state, fresh, error } = useOpsState();
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const staffKey = useSyncExternalStore(subscribeKey, readStaffKey, () => "");
+  const staffKey = useStaffKey();
   const selected = state?.incidents.find((i) => i.id === selectedId) ?? null;
 
   const stats = [
@@ -55,7 +30,7 @@ export function OpsView() {
 
   return (
     <div className="flex min-h-dvh flex-1">
-      <aside className="hidden w-48 shrink-0 bg-navy p-4 text-white md:block">
+      <aside className="hidden w-48 shrink-0 bg-navy p-4 text-white xl:block">
         <p className="font-display text-xl">TrustPath Ops</p>
         <nav aria-label="Console" className="mt-6 space-y-1">
           {nav.map(({ label, Icon }) => (
@@ -76,7 +51,7 @@ export function OpsView() {
               type="password"
               autoComplete="off"
               value={staffKey}
-              onChange={(e) => saveKey(e.target.value)}
+              onChange={(e) => saveStaffKey(e.target.value)}
               className="h-9 w-40 rounded-md border border-line bg-surface px-2 text-ink"
             />
           </label>
@@ -90,7 +65,7 @@ export function OpsView() {
         </header>
         {error && <p className="text-sm text-muted">{state ? "Reconnecting…" : "Can't load the console right now."}</p>}
 
-        <div className="grid gap-4 xl:grid-cols-2">
+        <div className="grid gap-4 lg:grid-cols-2">
           <Card id="live" className="min-w-0 overflow-x-auto p-4">
             <h2 className="text-lg font-semibold">Live card events</h2>
             {state && <CardEventList events={state.cardEvents} fresh={fresh} />}

@@ -12,4 +12,10 @@ export const LEVEL = {
 export const flash = (isFresh: boolean, level: Level) =>
   isFresh ? { className: "animate-flash", style: { "--flash": LEVEL[level].flash } as React.CSSProperties } : { className: "", style: undefined };
 
-export const clock = (iso: string) => new Date(iso).toLocaleTimeString("en-AU", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
+/** Today: 24-hour time with seconds. Earlier: "12 Nov 05:47", so seed history reads as history. */
+export const clock = (iso: string) => {
+  const d = new Date(iso);
+  return d.toDateString() === new Date().toDateString()
+    ? d.toLocaleTimeString("en-AU", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false })
+    : `${d.toLocaleDateString("en-AU", { day: "numeric", month: "short" })} ${d.toLocaleTimeString("en-AU", { hour: "2-digit", minute: "2-digit", hour12: false })}`;
+};

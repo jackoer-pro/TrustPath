@@ -21,13 +21,13 @@ export function CardEventList({ events, fresh }: { events: OpsState["cardEvents"
         return (
           <li key={e.id} className={`-mx-2 rounded-md px-2 py-2 ${f.className}`} style={f.style}>
             <div className="flex items-center gap-3 text-sm">
-              <span className="w-16 shrink-0 font-mono text-xs text-muted tabular-nums">{clock(e.createdAt)}</span>
               <span className="min-w-0 flex-1 truncate font-medium">{e.merchant}</span>
-              <span className="w-24 text-right font-semibold tabular-nums">{formatAUD(e.amountCents)}</span>
-              <Badge className={`w-24 justify-center text-xs ${BADGE[d.level]}`}>{d.label}</Badge>
+              <span className="shrink-0 text-right font-semibold tabular-nums">{formatAUD(e.amountCents)}</span>
+              <Badge className={`w-24 shrink-0 justify-center text-xs ${BADGE[d.level]}`}>{d.label}</Badge>
             </div>
-            <div className="mt-0.5 pl-19 text-xs text-muted">
-              {e.channel === "ecommerce" ? "Online" : "In store"} · •••• {e.cardLastFour}
+            <div className="mt-0.5 text-xs text-muted">
+              <span className="font-mono tabular-nums">{clock(e.createdAt)}</span> · {e.channel === "ecommerce" ? "Online" : "In store"} · ••••{" "}
+              {e.cardLastFour}
               {(e.reasons.length > 0 || e.cardAction === "temporarily_locked") && <span className="mx-1">·</span>}
               {e.cardAction === "temporarily_locked" && (
                 <span className="mr-2 inline-flex items-center gap-1 font-medium text-risk-critical">
