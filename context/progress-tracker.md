@@ -8,13 +8,14 @@ Update this file after every meaningful implementation change.
   **Act 1 passes end to end on the public URL.** Units 13–16 done;
   **golden-path steps 1–7 pass online and offline**, and the hijack block is
   demoable on demand. Units 17–18 done; **golden-path step 10 works
-  through the API.** Phase C: Units 19–22 done; **customer-side steps 10–16
-  pass online and offline.** Unit 23 spec drafted, awaiting clarification.
+  through the API.** Phase C: Units 19–23 done; **customer-side steps 10–16
+  pass online and offline, and the console shows steps 8 and 11 live.**
+  Unit 24 spec drafted, awaiting clarification.
 
 ## Current Goal
 
 - Answer the "Clarify before building" questions in
-  `context/feature_specs/23-bank-console.md`, then build Unit 23.
+  `context/feature_specs/24-case-brief.md`, then build Unit 24.
 
 ## Schedule
 
@@ -67,8 +68,8 @@ before it's built. What each unit contains and when it counts as done is in
 - [x] 20 Emergency protection (steps 12–13, 16)
 - [x] 21 Safety knowledge base (step 14)
 - [x] 22 Protect tab (step 15)
-- [ ] 23 Bank console lists (steps 8, 11) — spec drafted
-- [ ] 24 AI case brief (step 17)
+- [x] 23 Bank console lists (steps 8, 11)
+- [ ] 24 AI case brief (step 17) — spec drafted
 - [ ] 25 Staff review and resolve (Act 4 done)
 - [ ] 26 Demo harness (step 19)
 
@@ -181,6 +182,11 @@ before it's built. What each unit contains and when it counts as done is in
   with lock state, restrictions, cases with case numbers, and an alert row
   linking to Home. **Step 15 works.** See `feature_specs/22-protect-tab.md`
   → Built.
+- **Unit 23 Bank console lists** (Sun 15 Nov): `GET /api/ops/state`, live
+  card events with decisions and reasons, incidents by severity, the audit
+  log with actor chips, stat pills and a 1 s highlight on new rows. **Steps
+  8 and 11 visible in `/ops` within 1 s.** See
+  `feature_specs/23-bank-console.md` → Built.
 
 ## In Progress
 
@@ -188,10 +194,10 @@ before it's built. What each unit contains and when it counts as done is in
 
 ## Next Up
 
-- Developer answers the questions in `23-bank-console.md`.
+- Developer answers the questions in `24-case-brief.md`.
 - Developer: set Vercel `DEMO_ADMIN_KEY` to the generated production key and
   redeploy (see `12-first-deploy.md` → Built).
-- Build and verify Unit 23, tick it above, then write `24-case-brief.md`.
+- Build and verify Unit 24, tick it above, then write `25-staff-resolve.md`.
 
 ## Open Questions
 

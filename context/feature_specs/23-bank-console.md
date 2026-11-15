@@ -1,6 +1,6 @@
 # 23 — Bank console lists
 
-Status: draft
+Status: done
 
 ## Goal
 
@@ -57,32 +57,50 @@ visible in `/ops`.**
 
 ## Clarify before building
 
-1. **`/ops` and `GET /api/ops/state` stay open, with no demo key**
-   (`architecture.md`: "`/ops` is open in the demo"), so judges can open the
-   console from the public URL. It's read-only and all data is mock. The
-   staff actions in Unit 25 will need the demo key. OK?
-2. **Customer-visible card numbers only** (last four), never full ids, in
-   the console. OK?
-3. **The audit log shows the latest 50 rows**, with no paging or filters.
-   OK?
-4. **The highlight is computed client-side** by diffing ids between polls
-   (no "new" flag in the DB). The first load highlights nothing. OK?
+Answered by the developer, Sun 15 Nov: all four proposals accepted.
+
+1. `/ops` and `GET /api/ops/state` stay open (read only, mock data).
+2. Only last-four card numbers in the console.
+3. The audit log shows the latest 50 rows.
+4. The highlight is computed client-side by diffing ids between polls.
 
 ## Verify when done
 
-- [ ] After a reset: 15 approved seed events, no incidents, stat pills 0 /
+- [x] After a reset: 15 approved seed events, no incidents, stat pills 0 /
       0 / 0.
-- [ ] Headphone purchase (steps 5–7) → "Injection blocked" (medium)
+- [x] Headphone purchase (steps 5–7) → "Injection blocked" (medium)
       appears within 3 s, highlighted; Injection pill 1.
-- [ ] Nova (step 10) → DECLINED with "Card locked" and the three reasons
+- [x] Nova (step 10) → DECLINED with "Card locked" and the three reasons
       appears within 3 s; Declined 1; the card-fraud incident is listed.
-- [ ] Steps 12–13 → the critical "Possible account compromise" incident;
+- [x] Steps 12–13 → the critical "Possible account compromise" incident;
       the audit log shows `customer`, `ai_agent` and `fraud_engine` rows.
-- [ ] Selecting an incident survives the next poll.
-- [ ] 1280 px wide: no horizontal scroll; 390 px: columns stack.
-- [ ] `npm test`, `npm run build` and `npm run lint` pass. Deployed and
+- [x] Selecting an incident survives the next poll.
+- [x] 1280 px wide: no horizontal scroll; 390 px: columns stack.
+- [x] `npm test`, `npm run build` and `npm run lint` pass. Deployed and
       checked on the public URL.
 
 ## Built (filled in after completion)
 
--
+Sun 15 Nov.
+
+- `lib/ops/state.ts` → `getOpsState()`; `GET /api/ops/state` (open, read
+  only). `components/ops/`: `useOpsState` (2 s poll; `fresh` = ids not in
+  the previous poll), `CardEventList`, `IncidentList`, `AuditLog`,
+  `OpsView`, and `tone.ts` (risk colours, `flash()`, 24-hour `clock()`).
+  `app/ops/page.tsx` renders `OpsView`. The incident detail is a stub until
+  Unit 24.
+- Highlight: a new `--animate-flash` token in `globals.css` (1 s from
+  `--flash` = the matching `risk-*-bg`); reduced motion turns it off.
+- "Declined" counts the last 24 h (`ponytail:` note).
+- Panels scroll horizontally inside themselves at phone width, so the page
+  never does.
+- Verified in headless Chrome at 1280 px: reset → 15 seed events, pills
+  0/0/0, no highlight on first load; headphone purchase → "Injection
+  blocked" highlighted, Injection 1; Nova → DECLINED + Card locked + 3
+  reasons, highlighted, within 1 s; steps 12–13 → critical "Possible
+  account compromise"; audit actors `customer`, `ai_agent`,
+  `trust_engine`, `fraud_engine`; selection survives polls; no horizontal
+  scroll at 1280 or 390 px; no console errors.
+- Noticed: all 15 seed events share one timestamp (set by `reset_demo()`).
+  Cosmetic; consider staggering them in Unit 26 (migration change needs an
+  explicit OK).
