@@ -234,6 +234,9 @@ before it's built. What each unit contains and when it counts as done is in
   → normal receipt + PIN. CoachGuard removed from screens (the pasted-text
   safety rule stays). Migration 0004. `npm run eval` 30/30 online and offline.
   See `feature_specs/35-morning-briefing.md`.
+- **Unit 36** (Mon 16 Nov): saying "Good morning" / "What's on today?" in chat shows the
+  briefing (tool `get_briefing`, offline too). Full manual + automated test script in
+  `context/test-script.md`. `npm run eval` 31 cases.
 
 ## In Progress
 

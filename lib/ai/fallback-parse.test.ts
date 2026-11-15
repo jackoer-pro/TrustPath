@@ -130,3 +130,10 @@ test("personal context: payday plan, safe-to-spend, affordability, preferences, 
   assert.deepEqual(n("I just got paid $1,500. Move $300 into savings, pay my $120 electricity bill and tell me what I have left."), ["prepare_transfer", "prepare_transfer"]);
   assert.deepEqual(n("Pay my usual $120 electricity bill"), ["prepare_transfer"]);
 });
+
+test("briefing: greetings and 'what's on today' → get_briefing; a greeting with a request does the request", () => {
+  const n = (s: string) => parse(u(s)).calls.map((c) => c.name);
+  for (const s of ["Good morning", "good morning!", "Morning", "Hi", "What's on today?", "Brief me"]) assert.deepEqual(n(s), ["get_briefing"], s);
+  assert.deepEqual(n("Good morning, send $50 to Mum"), ["prepare_transfer"]);
+  assert.deepEqual(n("Hi, show my balance"), ["get_accounts"]);
+});

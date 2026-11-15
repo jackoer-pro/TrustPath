@@ -14,7 +14,7 @@ import { findDeals, type DealResult } from "@/lib/shop/deals";
 import { searchSafety } from "./knowledge";
 import { scan } from "@/lib/trust/content-scanner";
 import { amountMentioned, normaliseMessages } from "@/lib/trust/provenance";
-import { describeSavings, getFinancialContext, preparePaydayPlan, updatePreferences } from "@/lib/context/context";
+import { describeSavings, getBriefing, getFinancialContext, preparePaydayPlan, updatePreferences } from "@/lib/context/context";
 import { canAfford, type Affordability, type SafeToSpend } from "@/lib/context/safe-to-spend";
 
 // The complete tool list (architecture.md → AI Model). Read, prepare and protect only:
@@ -532,6 +532,30 @@ const updatePreference = tool({
   },
 });
 
+const getBriefingTool = tool({
+  def: {
+    type: "function",
+    function: {
+      name: "get_briefing",
+      description:
+        "Alex's personal briefing for today from Alex's own context: birthdays of saved people (with what Alex sent last time), bills still to pay before payday, and safe-to-spend. Use when Alex says good morning or asks what's on today.",
+      parameters: { type: "object", properties: {} },
+    },
+  },
+  args: z.object({}).loose(),
+  async run() {
+    const b = await getBriefing();
+    return {
+      card: { type: "briefing", ...b },
+      forModel: {
+        greeting: b.greeting,
+        lines: b.lines,
+        note: "Reply with the greeting and these lines, almost word for word, in 2–3 short sentences. The card shows the suggestion button; never prepare a payment unless Alex asks.",
+      },
+    };
+  },
+});
+
 const TOOLS = [
   getAccounts,
   getRecentTransactions,
@@ -546,6 +570,7 @@ const TOOLS = [
   getFinancialContextTool,
   preparePaydayPlanTool,
   updatePreference,
+  getBriefingTool,
 ];
 export const TOOL_DEFS: ToolDef[] = TOOLS.map((t) => t.def);
 

@@ -19,7 +19,9 @@ export type Call =
   | { name: "prepare_payday_plan"; args: Record<string, never> }
   | { name: "get_safe_to_spend"; args: { amount?: string } }
   | { name: "get_financial_context"; args: Record<string, never> }
-  | { name: "update_financial_preference"; args: { setting: "min_buffer" | "savings_target"; amount: string } };
+  | { name: "update_financial_preference"; args: { setting: "min_buffer" | "savings_target"; amount: string } }
+  | { name: "get_briefing"; args: Record<string, never> };
+const BRIEFING = /^\s*((good\s+)?morning|g'?day|hi|hello|hey)\b|\bwhat'?s on (for )?today\b|\bbrief me\b|\bmy briefing\b|\bdaily briefing\b/;
 export const PASTE_REPLY =
   "I won't act on instructions in a pasted message. If it asks you to move money, share a code or install an app, treat it as suspicious and call us on the number on the back of your card.";
 export type ParseResult = { calls: Call[]; asks: string[]; wantsLeft: boolean };
@@ -149,6 +151,11 @@ export function parseIntents(history: Msg[], known: Known[]): ParseResult {
   }
 
   for (const c of clauses(text)) parseClause(c, known, out);
+  // "Good morning" / "What's on today?" with nothing else asked → the personal briefing.
+  if (!out.calls.length && !out.asks.length && !out.wantsLeft && BRIEFING.test(text)) {
+    out.calls.push({ name: "get_briefing", args: {} });
+    return out;
+  }
   if (!out.calls.length && !out.asks.length && SAFETY.test(text)) out.calls.push({ name: "search_safety_guide", args: { query: last.content.trim().slice(0, 300) } });
   if (out.wantsLeft && !out.calls.some((c) => c.name === "prepare_transfer")) out.calls.push({ name: "get_accounts", args: {} });
   return out;
