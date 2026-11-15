@@ -21,7 +21,7 @@ export async function respondToNotification(id: string, response: Answer) {
   await audit("customer", "notification.answered", "notification", id, { response });
 
   let card: { id: string; status: string } | null = null;
-  if (!existing.card_event_id) return { notification, card };
+  if (!existing.card_event_id) return { notification, card, incidentId: null };
 
   const { data: event, error: evErr } = await sb.from("card_events").select("card_id").eq("id", existing.card_event_id).single();
   if (evErr) throw evErr;
@@ -59,5 +59,5 @@ export async function respondToNotification(id: string, response: Answer) {
   const { data: c, error: cardErr } = await sb.from("cards").select("id, status").eq("id", event.card_id).single();
   if (cardErr) throw cardErr;
   card = c;
-  return { notification, card };
+  return { notification, card, incidentId: (incident?.id as string | undefined) ?? null };
 }

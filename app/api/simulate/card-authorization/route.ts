@@ -1,8 +1,13 @@
+import { after } from "next/server";
 import { z } from "zod";
 import { checkDemoKey, fail, run } from "@/lib/http";
 import { toCents } from "@/lib/money";
 import { DEBIT_CARD_ID } from "@/lib/banking/constants";
 import { processAuthorization } from "@/lib/fraud/process-authorization";
+import { writeCaseBrief } from "@/lib/ai/case-brief";
+
+// The brief runs after the response (the decision is already committed). lib/fraud never imports lib/ai (invariant 7).
+export const maxDuration = 60;
 
 const Body = z.object({
   cardId: z.uuid().default(DEBIT_CARD_ID),
@@ -21,5 +26,9 @@ export async function POST(req: Request) {
   } catch {}
   if (!parsed.success || amountCents <= 0) return fail("BAD_REQUEST", "Invalid request", 400);
   const { cardId, merchant, channel } = parsed.data;
-  return run(() => processAuthorization({ cardId, amountCents, merchant, channel }));
+  return run(async () => {
+    const result = await processAuthorization({ cardId, amountCents, merchant, channel });
+    if (result.incidentId) after(() => writeCaseBrief(result.incidentId!));
+    return result;
+  });
 }
