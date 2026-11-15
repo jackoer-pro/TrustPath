@@ -29,6 +29,13 @@
   --color-focus: #1d6fd8;
 
   --animate-rise: rise 200ms ease-out;
+  /* New console rows: start on --flash (a risk-*-bg) and fade to the row's own background. */
+  --animate-flash: flash 1s ease-out;
+  @keyframes flash {
+    from {
+      background-color: var(--flash);
+    }
+  }
   @keyframes rise {
     from {
       opacity: 0;
