@@ -11,10 +11,27 @@ const tabs = [
   { href: "/me", label: "Me", Icon: UserRound },
 ] as const;
 
-export function TabBar() {
+/** Bottom tabs on phones; with `top`, the laptop (lg+) navigation in the header instead. */
+export function TabBar({ top = false }: { top?: boolean }) {
   const pathname = usePathname();
+  if (top)
+    return (
+      <nav aria-label="Main" className="hidden gap-1 lg:flex">
+        {tabs.map(({ href, label, Icon }) => (
+          <Link
+            key={href}
+            href={href}
+            aria-current={pathname === href ? "page" : undefined}
+            className={`flex min-h-11 items-center gap-2 rounded-md px-4 text-sm font-medium ${pathname === href ? "bg-sunken text-navy" : "text-muted hover:text-navy"}`}
+          >
+            <Icon className="h-4 w-4" aria-hidden />
+            {label}
+          </Link>
+        ))}
+      </nav>
+    );
   return (
-    <nav aria-label="Main" className="flex shrink-0 border-t border-line">
+    <nav aria-label="Main" className="flex shrink-0 border-t border-line lg:hidden">
       {tabs.map(({ href, label, Icon }) => {
         const active = pathname === href;
         return (
