@@ -8,7 +8,8 @@ const variants = {
 };
 
 const sizes = {
-  sm: "h-9 px-3 text-sm",
+  // Compact look, but never below Apple's 44×44 pt hit target.
+  sm: "min-h-11 px-3.5 text-sm",
   md: "h-11 px-4 text-base",
 };
 

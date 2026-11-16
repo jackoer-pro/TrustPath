@@ -311,3 +311,21 @@ Lucide React, stroke icons only. Sizes are `h-4 w-4` inline in text and
 - The chat thread is `aria-live="polite"` and the alert banner is
   `role="alert"`.
 - Tap targets are at least 44×44px in the customer app.
+
+## Westpac GEL and Apple HIG alignment (Mon 16 Nov polish)
+
+Source: WestpacGEL/GEL-next `packages/style-config` (theme-wbc.css, shared/*.css) and the Apple HIG.
+
+- **Colours:** brand red `#da1710` and navy `#1f1c4f` already matched GEL primary/hero. Neutrals moved to
+  GEL: background-pale `#f5f5f6` (chat), border-muted-soft `#dedee1`, text-body `#161619`. Muted text is
+  `#5e5d69` (GEL's `#706f7c` fails 4.5:1 on the pale background). Danger `#c40000` and warning `#c53b00`
+  are GEL reserved colours; success keeps `#12733a` because GEL `#008000` fails 4.5:1 on tinted badges.
+- **Focus:** GEL focus-outline: 2px solid `#bc57eb`, 3px offset.
+- **Type:** body uses GEL's system stack (-apple-system, BlinkMacSystemFont, Segoe UI, …), so Apple devices
+  show SF. GEL's display face "Westpac" is licensed and not shipped; display stays Source Serif 4.
+  Minimum text 11px (HIG minimum 11pt).
+- **Touch targets:** every control is at least 44×44 (HIG); `Button size="sm"` keeps a compact look with
+  `min-h-11`; icon-only buttons are 44×44.
+- **Chat:** assistant replies render light Markdown (paragraphs, "- " lists, **bold**) via
+  `lib/ui/rich-text.ts`; speech gets the same text without symbols.
+- **Browser surfaces:** selection, caret, checkbox accent and scrollbar take the navy palette.

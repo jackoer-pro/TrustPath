@@ -1,5 +1,6 @@
 "use client";
 
+import { RichText } from "./RichText";
 import { useEffect, useRef, type ReactNode } from "react";
 import { Bot, FlaskConical, WifiOff } from "lucide-react";
 import type { ChatCard } from "@/lib/ai/tools";
@@ -75,7 +76,7 @@ export function ChatThread({
         ) : (
           <div key={m.id} className="animate-rise space-y-3">
             <AssistantBubble>
-              <p className={m.error ? "text-risk-critical" : ""}>{m.content}</p>
+              <RichText text={m.content} className={m.error ? "text-risk-critical" : ""} />
               {m.label && (
                 <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-risk-critical-bg px-2 py-0.5 text-xs text-risk-critical">
                   <FlaskConical className="h-3 w-3" aria-hidden />
