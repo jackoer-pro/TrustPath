@@ -40,11 +40,17 @@ export function blocks(text: string): Block[] {
   return out.filter((b) => b.lines.length);
 }
 
-/** Plain text for speech: no symbols; list items read as separate sentences. */
+/** Sentences saying what the account will be left with: shown on screen, never read aloud (filmed in public). */
+const BALANCE_AFTER = /\b(left in|you'll have|you will have|leaving you|balance after|balance will be|remaining balance)\b/i;
+
+/** Plain text for speech: no symbols; list items read as separate sentences; no "you'll have $X left" sentences. */
 export function plainText(text: string): string {
   return blocks(text)
     .flatMap((b) => (b.list ? b.lines : [b.lines.join(" ")]))
     .map((l) => segments(l).map((s) => s.text).join("").trim())
     .map((l) => (/[.!?:]$/.test(l) ? l : `${l}.`))
+    .join(" ")
+    .split(/(?<=[.!?])\s+/)
+    .filter((s) => !BALANCE_AFTER.test(s))
     .join(" ");
 }

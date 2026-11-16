@@ -31,3 +31,8 @@ test("plain text for speech: no symbols, items as sentences; ordinary text and h
   assert.deepEqual(blocks("Pay-day is on Friday - see you then."), [{ list: false, lines: ["Pay-day is on Friday - see you then."] }]);
   assert.equal(plainText("## Heading with `code` and *emphasis*"), "Heading with code and emphasis.");
 });
+
+test("speech drops the 'you'll have $X left' sentence of a payment summary; the rest is read", () => {
+  const t = "I've prepared $50.00 to Linh Nguyen. You'll have $1,450.00 left in Everyday. Approve it with your PIN.";
+  assert.equal(plainText(t), "I've prepared $50.00 to Linh Nguyen. Approve it with your PIN.");
+});
