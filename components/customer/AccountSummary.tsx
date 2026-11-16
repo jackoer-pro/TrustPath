@@ -5,7 +5,7 @@ const chip = "min-w-40 rounded-xl border border-line p-3";
 
 export function AccountSummary({ accounts }: { accounts: CustomerState["accounts"] | null }) {
   return (
-    <section aria-label="Accounts" className="flex shrink-0 gap-3 overflow-x-auto px-4">
+    <section aria-label="Accounts" className="flex shrink-0 gap-3 overflow-x-auto px-4 lg:hidden">
       {accounts
         ? accounts.map((a) => (
             <div key={a.id} className={`${chip} bg-surface shadow-sm`}>

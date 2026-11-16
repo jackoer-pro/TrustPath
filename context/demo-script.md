@@ -4,6 +4,20 @@ Live app: **https://trust-path-five.vercel.app** · Film from **/demo** in a
 1920×1080 Chrome window (zoom 100%, full screen). Left: Alex's phone. Middle:
 the bank console. Right: demo controls.
 
+## Live presentation (laptop + a helper's phone)
+
+For an audience: open **https://trust-path-five.vercel.app** on the laptop (full screen, any width
+≥ 1024 px). It shows the bank's laptop view: big balances, **TrustPath knows you** (Mum's birthday and last
+gift, fortnightly pay, rent/power on schedule, shopping habit, biggest usual card spend, registered iPhone),
+**Recent activity** (live), and the chat on the right. Phones still get the phone layout.
+
+A helper opens **/demo/remote** on their own phone, types the demo key, and taps the scenario buttons
+(Good morning, card attempt, compromised agent, unfamiliar device, Reset). The laptop updates by itself
+within ~2 s: banner in the chat, red "declined" row with a **New** badge in Recent activity.
+
+- Click once anywhere on the laptop page first, so it's allowed to speak the briefing.
+- After the helper taps **Reset demo**, refresh the laptop.
+
 ## Before each take
 
 1. Open `/demo`, type the **demo key** into "Demo key" once per tab (it also

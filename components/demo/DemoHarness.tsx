@@ -12,8 +12,8 @@ const PHONE_W = 420;
 const PHONE_H = 860;
 const SCALE = 1.2; // ≈1032 px tall in a 1080 recording
 
-type Action = { label: string; path: string; body?: object };
-const ACTIONS: Action[] = [
+export type Action = { label: string; path: string; body?: object };
+export const ACTIONS: Action[] = [
   { label: "Good morning (briefing)", path: "/api/demo/briefing" },
   { label: "Inject card attempt ($3,580)", path: "/api/simulate/card-authorization", body: { amount: 3580, merchant: "Nova Electronics Online", channel: "ecommerce" } },
   { label: "Inject normal purchase ($14.50)", path: "/api/simulate/card-authorization", body: { amount: "14.50", merchant: "Metro Café", channel: "in_store" } },
@@ -23,7 +23,7 @@ const ACTIONS: Action[] = [
 ];
 
 /** Outside the component: timing a request isn't render work. */
-async function timedPost(a: Action, key: string) {
+export async function timedPost(a: Action, key: string) {
   const t0 = performance.now();
   const res = await fetch(a.path, {
     method: "POST",

@@ -87,6 +87,10 @@ export function HomeScreen() {
       .then((b) => {
         if (!b.ok) return;
         setMessages((m) => [...m, { id: crypto.randomUUID(), role: "assistant", content: "Here's your briefing for today.", at: new Date().toISOString(), cards: [{ type: "briefing", ...b.data }] }]);
+        // Sent from the remote: speak it here, once this page has had a click (browsers require one).
+        // Inside /demo's iframe the harness speaks instead, so it's never said twice.
+        const clicked = (navigator as Navigator & { userActivation?: { hasBeenActive: boolean } }).userActivation?.hasBeenActive;
+        if (window.self === window.top && clicked && voiceEnabled()) speak(b.data.speech);
       })
       .catch(() => {});
     // Mark it seen so it isn't shown again after a reload.

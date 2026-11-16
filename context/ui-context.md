@@ -255,6 +255,18 @@ The page has three columns:
 - the presenter camera (280×210, mirrored) is fixed in the bottom-right corner
   over the panel's reserved space; it stays above slides
 
+### Laptop view (customer app at lg+, ≥ 1024 px)
+
+- Full screen, no phone frame; header holds the logo and Home / Shop / Protect / Me nav (bottom tabs hidden).
+- Left (flexible, canvas): three cards — Everyday, Goal Saver, Safe to spend (teal); then two columns:
+  **TrustPath knows you** (icon tiles, birthday tile accented in brand red) and **Recent activity**
+  (newest first, declined rows on risk-critical-bg with a struck-through amount, "New" badge < 2 min).
+- Right: the page content (chat etc.) at max 520 px with a left border. Account chips in the chat column are hidden.
+
+### Demo remote (`/demo/remote`)
+
+Phone-sized: demo key, one 56 px button per simulated event, a one-line result.
+
 ### Merchant page (`/shop/[productId]`)
 
 This deliberately does **not** use TrustPath styling, so it reads as a

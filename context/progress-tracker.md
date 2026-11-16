@@ -252,6 +252,12 @@ before it's built. What each unit contains and when it counts as done is in
 - **Unit 40 Quiet briefing** (Mon 16 Nov): the briefing speaks only the greeting and the birthday nudge ("Last time you
   sent her $50. Want to send her $50 again now?"); rent and safe-to-spend stay on the card, never read aloud
   (privacy: the phone may be on speaker). Chat "Good morning" speaks the same.
+- **Unit 41 Quiet receipts** (Mon 16 Nov): spoken replies skip "you'll have $X left" sentences.
+- **Unit 42 Laptop view + remote** (Mon 16 Nov): at lg+ the customer app is a full-screen banking view —
+  balances + safe-to-spend, **TrustPath knows you** (learned from history: `lib/context/insights.ts`, tested),
+  live **Recent activity** (transactions + card events, declined attempts in red), chat on the right, nav in
+  the header. `/api/customer/insights`. **/demo/remote**: phone-sized scenario buttons for a helper's device;
+  the laptop speaks a briefing it receives once the page has had a click. Phones unchanged.
 
 ## In Progress
 

@@ -9,6 +9,7 @@ import { DEMO_PROFILE_ID, EVERYDAY_ACCOUNT_ID } from "@/lib/banking/constants";
 import { prepareTransfer, type PreparedAction } from "@/lib/banking/actions";
 import { safeToSpend, type ItemStatus, type SafeToSpend } from "./safe-to-spend";
 import { buildBriefing } from "./briefing";
+import { activity, learn, type CardEvent, type Txn } from "./insights";
 
 export type Preferences = {
   nextPayday: string;
@@ -287,3 +288,36 @@ export async function setPayeeBirthday(id: string, birthday: string | null) {
   await audit("customer", "payee.birthday_set", "payee", id, { name: data[0].name, birthday });
   return getFinancialContext();
 }
+
+/** Laptop insights panel (Unit 42): balances, what TrustPath has learned from Alex's history, and recent activity. */
+export async function getInsights() {
+  const sb = db();
+  const since = new Date(Date.now() - 400 * DAY).toISOString();
+  const [ctx, txns, cards, payees] = await Promise.all([
+    getFinancialContext(),
+    sb.from("transactions").select("amount_cents, counterparty, description, kind, created_at, accounts!inner(name, profile_id)").eq("accounts.profile_id", DEMO_PROFILE_ID).gte("created_at", since).order("created_at", { ascending: false }).limit(200),
+    sb.from("card_events").select("merchant, amount_cents, decision, created_at, cards!inner(profile_id)").eq("cards.profile_id", DEMO_PROFILE_ID).order("created_at", { ascending: false }).limit(100),
+    sb.from("payees").select("name, aliases, birthday").eq("profile_id", DEMO_PROFILE_ID).not("birthday", "is", null),
+  ]);
+  for (const r of [txns, cards, payees]) if (r.error) throw r.error;
+  const t: Txn[] = txns.data!.map((r) => ({
+    amountCents: Number(r.amount_cents),
+    counterparty: r.counterparty,
+    description: r.description,
+    kind: r.kind,
+    account: (r.accounts as unknown as { name: string }).name,
+    at: r.created_at,
+  }));
+  const c: CardEvent[] = cards.data!.map((r) => ({ merchant: r.merchant, amountCents: Number(r.amount_cents), decision: r.decision, at: r.created_at }));
+  const birthdays = payees.data!.map((p) => {
+    const alias = ((p.aliases as string[])[0] ?? "") as string;
+    return { name: p.name as string, display: ["mum", "mom", "dad"].includes(alias) ? alias.charAt(0).toUpperCase() + alias.slice(1) : (p.name as string), birthday: p.birthday as string };
+  });
+  return {
+    accounts: ctx.accounts,
+    safe: { amountCents: ctx.safe.amountCents, status: ctx.safe.status, nextPayday: ctx.safe.nextPayday },
+    knows: learn({ now: new Date().toISOString(), today: sydneyDate(), txns: t, cardEvents: c, birthdays, commitments: ctx.commitments, nextPayday: ctx.preferences.nextPayday }),
+    activity: activity(t, c),
+  };
+}
+export type Insights = Awaited<ReturnType<typeof getInsights>>;
