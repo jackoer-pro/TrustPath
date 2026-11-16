@@ -24,7 +24,7 @@ test("learned facts come from history: Mum's birthday + last gift, pay, bills, h
   assert.equal(by.pay.title, "Paid $1,500 every fortnight");
   assert.match(by.bills.detail, /\$500 to Sam Patel/);
   assert.equal(by.habit.title, "Metro Café about 2 times a month");
-  assert.equal(by.usual.title, "Your biggest card payment this month: $64.20"); // the declined $3,580 doesn't count
+  assert.equal(by.usual.title, "Card spending tops out around $64.20"); // the declined $3,580 doesn't count
 });
 
 test("activity: newest first, card rows not doubled, declined attempt flagged", () => {

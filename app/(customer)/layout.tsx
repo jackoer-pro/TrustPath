@@ -32,7 +32,7 @@ export default function CustomerLayout({ children }: LayoutProps<"/">) {
         </header>
         <div className="flex min-h-0 flex-1">
           <InsightsPanel />
-          <main className="flex min-h-0 flex-1 flex-col lg:max-w-[520px] lg:border-l lg:border-line">{children}</main>
+          <main className="flex min-h-0 flex-1 flex-col lg:max-w-[440px] xl:max-w-[520px] lg:border-l lg:border-line">{children}</main>
         </div>
         <TabBar />
         <p className="shrink-0 px-4 pb-2 text-center text-[11px] leading-tight text-muted">
