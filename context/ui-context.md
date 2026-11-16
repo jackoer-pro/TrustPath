@@ -249,8 +249,11 @@ The page has three columns:
 
 - the customer app iframe at 420px, in a phone frame
 - the ops iframe, flexible width
-- the control panel at 280px, with the demo key field, the four action
-  buttons and the last response in mono
+- the control panel at 280px: demo key, action buttons (2-column grid),
+  slides, the Workflow list (current act + cue), Camera / Record, and the last
+  response collapsed under a disclosure
+- the presenter camera (280×210, mirrored) is fixed in the bottom-right corner
+  over the panel's reserved space; it stays above slides
 
 ### Merchant page (`/shop/[productId]`)
 

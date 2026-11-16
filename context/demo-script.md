@@ -10,7 +10,13 @@ the bank console. Right: demo controls.
    unlocks the console's staff buttons).
 2. Click **Reset demo**: Everyday $1,500.00, Goal Saver $4,200.00, empty chat.
 3. PIN for every approval: `DEMO_PIN` (**1234** if not set).
-4. Turn the computer's sound on (the briefing is spoken). Optional:
+4. **Recording**: click **Camera on** (allow camera + microphone) so your face
+   shows bottom-right, then **Record** → choose **This tab** (tick "Also share tab
+   audio") → film → **Stop** downloads a `.webm`. The spoken briefing comes from
+   the computer's voice, which tab audio may not capture: if it's missing, pick
+   **Entire screen** with "Share system audio" instead. Use **Next step** in
+   Workflow to show which act you're in.
+5. Turn the computer's sound on (the briefing is spoken). Optional:
    `npm run eval -- https://trust-path-five.vercel.app` (31 automated cases; resets at the end). Full checklist: `context/test-script.md`.
 
 **Order matters:** Act 4 turns on emergency protection (payments paused, card
