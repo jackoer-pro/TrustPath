@@ -34,9 +34,10 @@ Tick each box when the result matches.
 
 ### 1. Morning briefing and voice
 - [ ] Turn the computer's sound on. In the phone's chat type `Good morning`.
-      → A "Good morning, Alex." card: Mum's birthday + "Last year you sent her
-      $50.00", rent $500 still to pay before payday (14 days away), safe to spend $345.00.
-      The reply is spoken aloud (speaker icon left of the message box = on).
+      → A "Good morning, Alex." card: Mum's birthday + "Last time you sent her
+      $50. Want to send her $50 again now?", rent $500 still to pay before payday (14 days away),
+      safe to spend $345.00. Only the greeting and the Mum line are spoken (speaker icon left of
+      the message box = on); rent and the balance are never read aloud.
 - [ ] Tap the speaker icon to turn spoken replies off, type `Hi` → card shows,
       no voice. Turn it back on.
 - [ ] Reset. In /demo click **Good morning (briefing)** → the same card appears

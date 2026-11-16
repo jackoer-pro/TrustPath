@@ -189,7 +189,7 @@ await check("Morning briefing: Mum's birthday + last year's $50, rent before pay
   const { status, body } = await demo("/api/demo/briefing");
   const b = body?.data;
   expect(status === 200 && b.greeting.startsWith("Good "), JSON.stringify(b));
-  expect(b.lines[0] === "It's Mum's birthday today. Last year you sent her $50.00. Want to send her something?", b.lines[0]);
+  expect(b.lines[0] === "It's Mum's birthday today. Last time you sent her $50. Want to send her $50 again now?", b.lines[0]);
   expect(b.lines.some((l) => /Rent of \$500\.00 is still to pay before payday/.test(l)) && b.lines.some((l) => /\$345\.00/.test(l)), JSON.stringify(b.lines));
   expect(b.suggestion?.message === "Send $50 to Mum", JSON.stringify(b.suggestion));
   expect((await state()).notifications.some((n) => n.kind === "briefing"), "the phone gets the briefing");
@@ -200,7 +200,7 @@ await check("Morning briefing: Mum's birthday + last year's $50, rent before pay
 await check("'Good morning' in chat → the personal briefing card (no payment prepared)", async () => {
   const r = seen(await chat("Good morning"));
   const b = (r?.cards ?? []).find((c) => c.type === "briefing");
-  expect(b?.lines?.[0] === "It's Mum's birthday today. Last year you sent her $50.00. Want to send her something?", JSON.stringify(b ?? r.reply));
+  expect(b?.lines?.[0] === "It's Mum's birthday today. Last time you sent her $50. Want to send her $50 again now?", JSON.stringify(b ?? r.reply));
   expect(receipts(r).length === 0, "nothing should be prepared");
   expect(/birthday/i.test(r.reply), `reply: ${r.reply}`);
 });
