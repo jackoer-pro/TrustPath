@@ -32,7 +32,7 @@ up 23%, mapped to what TrustPath does). Click to close.
 | Do this                                         | You should see / hear                                                                                                     |
 | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
 | (Video: Alex wakes up, picks up the phone.)     | —                                                                                                                         |
-| Controls: **Good morning (briefing)**           | The phone shows the briefing and the computer **speaks it**: "Good morning, Alex. It's Mum's birthday today. Last year you sent her $50. Want to send her something? Rent of $500 is still to pay before payday (in 14 days). You can safely spend $345 until then." |
+| Controls: **Good morning (briefing)**           | The phone shows the briefing and the computer **speaks only the nudge**: "Good morning, Alex. It's Mum's birthday today. Last time you sent her $50. Want to send her $50 again now?" Rent and the $345 safe-to-spend are on the card but never read aloud. |
 | Phone: tap **Send Mum $50** → Approve → PIN     | A normal Trust Receipt to Linh Nguyen → Everyday **$1,450.00**. (The AI suggested; Alex decided; the bank checked.)       |
 
 ## Act 1 — "My bank knows me"

@@ -152,7 +152,9 @@ export function HomeScreen() {
         ? { id: crypto.randomUUID(), role: "assistant", content: body.data.reply, cards: body.data.cards, offline: body.data.offline, at: new Date().toISOString() }
         : { id: crypto.randomUUID(), role: "assistant", content: OFFLINE_ERROR, error: true, at: new Date().toISOString() };
       setMessages((m) => [...m, reply]);
-      if (voiceEnabled() && !reply.error) speak(plainText(reply.content));
+      // A briefing speaks only its own nudge; balances stay on screen.
+      const briefing = reply.cards?.find((c) => c.type === "briefing");
+      if (voiceEnabled() && !reply.error) speak(briefing && "speech" in briefing ? String(briefing.speech) : plainText(reply.content));
     } catch {
       setMessages((m) => [...m, { id: crypto.randomUUID(), role: "assistant", content: OFFLINE_ERROR, error: true, at: new Date().toISOString() }]);
     } finally {

@@ -249,6 +249,9 @@ before it's built. What each unit contains and when it counts as done is in
 - **Unit 39 Filming studio** (Mon 16 Nov): `/demo` controls gain a Workflow list (Opening → Act 0–5 → Closing,
   current step shows its cue), a presenter camera bubble fixed bottom-right, and **Record** (screen + camera + mic
   → `.webm` download, all in the browser). Action buttons are a 2-column grid; the raw response log is collapsed.
+- **Unit 40 Quiet briefing** (Mon 16 Nov): the briefing speaks only the greeting and the birthday nudge ("Last time you
+  sent her $50. Want to send her $50 again now?"); rent and safe-to-spend stay on the card, never read aloud
+  (privacy: the phone may be on speaker). Chat "Good morning" speaks the same.
 
 ## In Progress
 

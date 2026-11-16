@@ -17,7 +17,7 @@ export type BriefingInput = {
 export type Briefing = {
   greeting: string;
   lines: string[];
-  /** The same words, as one paragraph for speech. */
+  /** What's read aloud: the greeting and the birthday nudge only. Balances and bills stay on screen, never spoken. */
   speech: string;
   suggestion: { label: string; message: string } | null;
 };
@@ -31,14 +31,15 @@ export function buildBriefing(i: BriefingInput): Briefing {
 
   const b = i.birthdaysToday[0];
   if (b) {
+    const amount = b.lastGiftCents ? formatAUD(b.lastGiftCents).replace(/\.00$/, "") : null;
     lines.push(
-      `It's ${b.display}'s birthday today.${b.lastGiftCents ? ` Last year you sent ${b.pronoun} ${formatAUD(b.lastGiftCents)}.` : ""} Want to send ${b.pronoun} something?`,
+      amount
+        ? `It's ${b.display}'s birthday today. Last time you sent ${b.pronoun} ${amount}. Want to send ${b.pronoun} ${amount} again now?`
+        : `It's ${b.display}'s birthday today. Want to send ${b.pronoun} something?`,
     );
-    if (b.lastGiftCents) {
-      const amount = formatAUD(b.lastGiftCents).replace(/\.00$/, "");
-      suggestion = { label: `Send ${b.display} ${amount}`, message: `Send ${amount} to ${capitalise(b.payeeAlias)}` };
-    }
+    if (amount) suggestion = { label: `Send ${b.display} ${amount}`, message: `Send ${amount} to ${capitalise(b.payeeAlias)}` };
   }
+  const nudge = lines[0];
   const day = new Date(`${i.nextPayday}T00:00:00`).toLocaleDateString("en-AU", { weekday: "long" });
   const due = i.dueBeforePayday[0];
   if (due) lines.push(`${due.name} of ${formatAUD(due.amountCents)} is still to pay before payday on ${day}.`);
@@ -52,5 +53,5 @@ export function buildBriefing(i: BriefingInput): Briefing {
         : `Heads up: you're ${formatAUD(s.shortfallCents)} short of what's still to pay before payday on ${day}.`,
   );
 
-  return { greeting, lines, speech: [greeting, ...lines].join(" "), suggestion };
+  return { greeting, lines, speech: nudge ? `${greeting} ${nudge}` : `${greeting} Your day is on screen.`, suggestion };
 }

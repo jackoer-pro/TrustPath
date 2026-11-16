@@ -18,12 +18,14 @@ test("seeded morning: Mum's birthday with last year's gift, rent before Friday's
   const b = buildBriefing(seed);
   assert.equal(b.greeting, "Good morning, Alex.");
   assert.deepEqual(b.lines, [
-    "It's Mum's birthday today. Last year you sent her $50.00. Want to send her something?",
+    "It's Mum's birthday today. Last time you sent her $50. Want to send her $50 again now?",
     "Rent of $500.00 is still to pay before payday on Friday.",
     "You can safely spend $345.00 until then.",
   ]);
   assert.deepEqual(b.suggestion, { label: "Send Mum $50", message: "Send $50 to Mum" });
-  assert.match(b.speech, /^Good morning, Alex\. It's Mum's birthday today\./);
+  // Only the greeting and the nudge are spoken: no balances or bills read aloud.
+  assert.equal(b.speech, `Good morning, Alex. ${b.lines[0]}`);
+  assert.doesNotMatch(b.speech, /\$345|Rent|spend/);
 });
 
 test("no birthday, nothing due: just safe-to-spend until payday; evening greeting; no suggestion", () => {
@@ -31,6 +33,7 @@ test("no birthday, nothing due: just safe-to-spend until payday; evening greetin
   assert.equal(b.greeting, "Good evening, Alex.");
   assert.deepEqual(b.lines, ["You can safely spend $345.00 until payday on Friday."]);
   assert.equal(b.suggestion, null);
+  assert.equal(b.speech, "Good evening, Alex. Your day is on screen.");
 });
 
 test("a birthday with no gift history asks, but doesn't invent an amount", () => {
