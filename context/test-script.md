@@ -18,11 +18,11 @@ npm run eval -- https://trust-path-five.vercel.app
 - Uses the demo key from `.env.local` (the live site currently accepts the same
   key). If production has its own key:
   `DEMO_ADMIN_KEY=<production key> npm run eval -- https://trust-path-five.vercel.app`
-- Expect: `31/31 passed · assistant online`. It resets the demo when it finishes.
+- Expect: `33/33 passed · assistant online`. It resets the demo when it finishes.
 - A `FAIL` line names the case and what it got. Run it once more; if the same
   case fails twice, stop and tell Claude which line failed.
 
-Unit tests (no internet needed): `npm test` → `pass 106`, `fail 0`.
+Unit tests (no internet needed): `npm test` → `pass 113`, `fail 0`.
 
 ---
 
@@ -35,7 +35,7 @@ Tick each box when the result matches.
 ### 1. Morning briefing and voice
 - [ ] Turn the computer's sound on. In the phone's chat type `Good morning`.
       → A "Good morning, Alex." card: Mum's birthday + "Last year you sent her
-      $50.00", rent $500 before payday on Friday, safe to spend $345.00.
+      $50.00", rent $500 still to pay before payday (14 days away), safe to spend $345.00.
       The reply is spoken aloud (speaker icon left of the message box = on).
 - [ ] Tap the speaker icon to turn spoken replies off, type `Hi` → card shows,
       no voice. Turn it back on.
@@ -65,6 +65,15 @@ Tick each box when the result matches.
 - [ ] `Change my minimum buffer to $300.` → "Updated", safe to spend $245.00.
 - [ ] **Me** tab → payday, commitments (change an amount, remove one, add one),
       savings goal, buffer, Mum's birthday. Changes stick after reload.
+
+### 3b. Money logic edge cases
+- [ ] Reset. `Pay my $120 electricity bill` → receipt. Ask the same again → Blocked "already waiting
+      for your approval". Approve the first, ask again → Blocked "Already paid this month: you paid
+      BrightSpark Energy $120.00 on …". `Send $50 to Mum` still works (people aren't limited).
+- [ ] Reset. Payday plan → approve all; buy QuietPro ($149), Studio ANC 2 ($119) and the kettle ($49);
+      `Send $118 to Mum` → approve. Everyday $145.00. `What can I spend until payday?` → **$0.00** with
+      "Everything still to pay before payday is covered, leaving $110.00. That's $90.00 under the $200.00
+      buffer you chose…" and a "Left after what's still to pay $110.00" line. Not "short".
 
 ### 4. AI permissions (mandate)
 - [ ] Reset. Me → "Most the assistant can prepare at once" → 500 → Save.

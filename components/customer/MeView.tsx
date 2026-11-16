@@ -144,7 +144,7 @@ export function MeView() {
           />
         </div>
         <p className="py-1 text-sm">
-          Expected income <span className="float-right tabular-nums">{formatAUD(p.expectedIncomeCents)}</span>
+          Expected pay <span className="float-right tabular-nums">{formatAUD(p.expectedIncomeCents)}</span>
         </p>
       </Section>
 

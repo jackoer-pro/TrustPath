@@ -75,6 +75,36 @@ async function personalFacts(ownAccountNames: string[]) {
   };
 }
 
+/** R11: was this biller already paid this calendar month (Sydney), or is a payment to it waiting for approval? */
+async function billThisMonth(payee: { id: string; name: string }, accountIds: string[]) {
+  const sb = db();
+  const ym = new Intl.DateTimeFormat("en-CA", { timeZone: "Australia/Sydney", year: "numeric", month: "2-digit" }).format(new Date());
+  const monthStart = new Date(`${ym}-01T00:00:00+10:00`).toISOString();
+  const [paid, pending] = await Promise.all([
+    sb
+      .from("transactions")
+      .select("amount_cents, created_at")
+      .in("account_id", accountIds)
+      .eq("counterparty", payee.name)
+      .lt("amount_cents", 0)
+      .gte("created_at", monthStart)
+      .order("created_at", { ascending: false })
+      .limit(1),
+    sb.from("pending_actions").select("id").eq("payee_id", payee.id).eq("status", "pending_approval").gt("expires_at", new Date().toISOString()).limit(1),
+  ]);
+  if (paid.error) throw paid.error;
+  if (pending.error) throw pending.error;
+  if (paid.data[0])
+    return {
+      payeeName: payee.name,
+      paid: {
+        amountCents: -Number(paid.data[0].amount_cents),
+        on: new Date(paid.data[0].created_at).toLocaleDateString("en-AU", { timeZone: "Australia/Sydney", day: "numeric", month: "short" }),
+      },
+    };
+  return pending.data.length ? { payeeName: payee.name, pending: true } : null;
+}
+
 const intentOf = (origin: Origin, opts: { fromSavedPlan?: boolean; confirmedInApp?: boolean }): IntentSource =>
   origin === "simulated_compromised_agent"
     ? "external"
@@ -175,6 +205,7 @@ export async function prepareTransfer(input: PrepareTransferInput): Promise<Prep
     : checkProvenance({ type: "transfer", amountCents: input.amountCents, rawTo: input.to, recipientAliases: recipient?.aliases ?? [] }, input.userMessages);
   const balance = Number(from.balance_cents);
   const facts = await personalFacts(accts.map((a) => a.name));
+  const duplicateBill = payee?.kind === "biller" ? await billThisMonth(payee, accts.map((a) => a.id)) : null;
   const session = input.session ?? REGISTERED_SESSION;
   const intent = intentOf(input.origin, input);
   const verdict = assess(
@@ -193,6 +224,7 @@ export async function prepareTransfer(input: PrepareTransferInput): Promise<Prep
       buffer: facts.bufferCents !== null && from.id === EVERYDAY_ACCOUNT_ID ? { bufferCents: facts.bufferCents, balanceAfterCents: balance - input.amountCents } : null,
       session,
       usualMaxCents: facts.usualMaxCents,
+      duplicateBill,
     },
   );
 

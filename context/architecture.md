@@ -288,6 +288,7 @@ Evaluated in order. The first **block** wins; holds and warnings accumulate.
 | R7  | Unverified payee      | `payee.verified = false`                                                  | step_up, medium (warning on receipt)        |
 | R9  | AI mandate (customer-set) | an assistant/agent action over the AI limit, or to a payee not allowed for the AI (block); leaving the account below the minimum buffer (step_up) | block, high / step_up, medium |
 | R10 | Session trust (synthetic) | unfamiliar device +2, new sign-in +1, payee added < 7 days +2, amount > 3× usual largest payment +2; ≥5 hold, ≥2 step_up; never claims identity | hold, high / step_up, medium |
+| R11 | Bills once a month | a payment to a **biller** already paid this calendar month (Sydney), or one already waiting for approval | block, medium |
 | R8  | Scam coaching (CoachGuard) | a strong CoachGuard assessment in the last hour, and a transfer to a payee added < 7 days ago or an unknown recipient (established payee: warning) | hold, high (established payee: step_up, medium) |
 | —   | Otherwise             | —                                                                         | step_up, low (every action needs approval)  |
 

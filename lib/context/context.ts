@@ -276,7 +276,7 @@ export async function getBriefing() {
     birthdaysToday,
     dueBeforePayday: ctx.commitments.filter((c) => c.status === "due" && c.payeeName).map((c) => ({ name: c.name, amountCents: c.amountCents })),
     nextPayday: ctx.preferences.nextPayday,
-    safeToSpendCents: ctx.safe.amountCents,
+    safe: ctx.safe,
   });
 }
 

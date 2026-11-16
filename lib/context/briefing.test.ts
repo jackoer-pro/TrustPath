@@ -11,7 +11,7 @@ const seed: BriefingInput = {
     { name: "Electricity", amountCents: 12000 },
   ],
   nextPayday: "2026-11-20",
-  safeToSpendCents: 34500,
+  safe: { amountCents: 34500, status: "ok", shortfallCents: 0, bufferCents: 20000 },
 };
 
 test("seeded morning: Mum's birthday with last year's gift, rent before Friday's payday, $345 safe to spend", () => {
@@ -37,4 +37,12 @@ test("a birthday with no gift history asks, but doesn't invent an amount", () =>
   const b = buildBriefing({ ...seed, birthdaysToday: [{ display: "Sam", payeeAlias: "sam", pronoun: "them", lastGiftCents: null }] });
   assert.equal(b.lines[0], "It's Sam's birthday today. Want to send them something?");
   assert.equal(b.suggestion, null);
+});
+
+test("nothing safe to spend is worded by situation, never as '$0.00'", () => {
+  const under = buildBriefing({ ...seed, birthdaysToday: [], dueBeforePayday: [], safe: { amountCents: 0, status: "buffer", shortfallCents: 9000, bufferCents: 20000 } });
+  assert.deepEqual(under.lines, ["Your bills are covered, but you're $90.00 under your $200.00 buffer, so go easy until payday on Friday."]);
+  const short = buildBriefing({ ...seed, safe: { amountCents: 0, status: "short", shortfallCents: 15500, bufferCents: 20000 } });
+  assert.equal(short.lines.at(-1), "Heads up: you're $155.00 short of what's still to pay before payday on Friday.");
+  for (const b of [under, short]) assert.doesNotMatch(b.speech, /\$0\.00/);
 });
