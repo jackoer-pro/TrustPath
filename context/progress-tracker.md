@@ -240,6 +240,11 @@ before it's built. What each unit contains and when it counts as done is in
 - **Unit 37 Polish** (Mon 16 Nov): chat replies render bullets/bold instead of raw Markdown; tokens,
   focus ring and body font aligned to Westpac GEL; 44pt targets and 11pt minimum text (Apple HIG);
   payday plan idempotent within a turn. See `ui-context.md` → Westpac GEL and Apple HIG alignment.
+- **Unit 38 Logic pass** (Mon 16 Nov): safe-to-spend reports *which* situation applies (money to spend /
+  bills covered but under the buffer / short for bills) with matching card, briefing and affordability copy
+  and a "left after what's still to pay" line; R11 stops paying a biller twice in a calendar month;
+  receipts list the decisive reason first; R6 says "more than half of what's in the account" when that's why.
+  Migration 0005: fortnightly pay cycle (next payday = today + 14, expected pay $1,500). `npm run eval` 33.
 
 ## In Progress
 

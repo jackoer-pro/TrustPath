@@ -29,9 +29,11 @@ export type PolicyContext = {
   session?: SessionInfo | null;
   /** The customer's usual largest outgoing payment (R10 "unusual amount"). */
   usualMaxCents?: number;
+  /** R11: this biller was already paid this calendar month, or a payment to it is already waiting for approval. */
+  duplicateBill?: { payeeName: string; paid?: { amountCents: number; on: string }; pending?: boolean } | null;
 };
 
-export type RuleId = "R1" | "R2" | "R3" | "R4" | "R5" | "R6" | "R7" | "R8" | "R9" | "R10";
+export type RuleId = "R1" | "R2" | "R3" | "R4" | "R5" | "R6" | "R7" | "R8" | "R9" | "R10" | "R11";
 export type RuleHit = { id: RuleId; decision: Decision; risk: RiskLevel; reason: string };
 
 export type Assessment = {
@@ -127,7 +129,15 @@ export function assess(action: PolicyAction, ctx: PolicyContext): Assessment {
   if (action.amountCents > ctx.sourceBalanceCents) add("R5", { decision: "block", risk: "medium", reason: "There isn't enough money in that account." });
   // R6 Large amount (own-account transfers exempt)
   if (!own && (action.amountCents > LARGE_AMOUNT_CENTS || action.amountCents * 2 > ctx.sourceBalanceCents))
-    add("R6", { decision: "hold", risk: "high", reason: "This is a large payment, so our team will review it first." });
+    add("R6", {
+      decision: "hold",
+      risk: "high",
+      // Say which condition fired: a $120 bill isn't "large", but it can be more than half of what's left.
+      reason:
+        action.amountCents > LARGE_AMOUNT_CENTS
+          ? "This is a large payment, so our team will review it first."
+          : "This is more than half of what's in the account, so our team will check it with you first.",
+    });
   // R7 Unverified payee
   if (ctx.recipient && !ctx.recipient.verified) add("R7", { decision: "step_up", risk: "medium", reason: "This payee hasn't been verified yet." });
   // R8 Scam coaching (CoachGuard): strong signs + a new or unknown recipient → hold; an established payee → warning.
@@ -149,6 +159,16 @@ export function assess(action: PolicyAction, ctx: PolicyContext): Assessment {
       risk: "medium",
       reason: `This would leave ${formatAUD(Math.max(ctx.buffer.balanceAfterCents, 0))} in the account, below your ${formatAUD(ctx.buffer.bufferCents)} minimum buffer.`,
     });
+  // R11 Bills once a month: a second payment to the same biller in a calendar month is almost always a mistake.
+  const dup = ctx.duplicateBill;
+  if (action.type === "transfer" && dup)
+    add("R11", {
+      decision: "block",
+      risk: "medium",
+      reason: dup.paid
+        ? `Already paid this month: you paid ${dup.payeeName} ${formatAUD(dup.paid.amountCents)} on ${dup.paid.on}. Bills are paid once a month, so this second payment is stopped.`
+        : `A payment to ${dup.payeeName} is already waiting for your approval. Bills are paid once a month, so this second one is stopped.`,
+    });
   // R10 Session trust
   const session = sessionRisk(action, ctx);
   if (session.hit) add("R10", session.hit);
@@ -159,5 +179,8 @@ export function assess(action: PolicyAction, ctx: PolicyContext): Assessment {
       ? "hold"
       : "step_up";
   const riskLevel = hits.reduce<RiskLevel>((max, h) => (RANK[h.risk] > RANK[max] ? h.risk : max), "low");
-  return { decision, riskLevel, reasons: hits.map((h) => h.reason), flags, rules: hits, sessionSignals: session.signals };
+  // The customer reads reasons most-decisive first (blocks, then holds, then warnings); the trace keeps rule order.
+  const WEIGHT: Record<Decision, number> = { block: 0, hold: 1, step_up: 2, allow: 3 };
+  const reasons = [...hits].sort((a, b) => WEIGHT[a.decision] - WEIGHT[b.decision]).map((h) => h.reason);
+  return { decision, riskLevel, reasons, flags, rules: hits, sessionSignals: session.signals };
 }

@@ -11,7 +11,8 @@ export type BriefingInput = {
   /** Commitments still to pay before payday, largest first. */
   dueBeforePayday: { name: string; amountCents: number }[];
   nextPayday: string; // YYYY-MM-DD
-  safeToSpendCents: number;
+  /** From safeToSpend(): the amount, and which situation applies. */
+  safe: { amountCents: number; status: "ok" | "buffer" | "short"; shortfallCents: number; bufferCents: number };
 };
 export type Briefing = {
   greeting: string;
@@ -41,7 +42,15 @@ export function buildBriefing(i: BriefingInput): Briefing {
   const day = new Date(`${i.nextPayday}T00:00:00`).toLocaleDateString("en-AU", { weekday: "long" });
   const due = i.dueBeforePayday[0];
   if (due) lines.push(`${due.name} of ${formatAUD(due.amountCents)} is still to pay before payday on ${day}.`);
-  lines.push(`You can safely spend ${formatAUD(i.safeToSpendCents)} until ${due ? "then" : `payday on ${day}`}.`);
+  const when = due ? "then" : `payday on ${day}`;
+  const s = i.safe;
+  lines.push(
+    s.status === "ok"
+      ? `You can safely spend ${formatAUD(s.amountCents)} until ${when}.`
+      : s.status === "buffer"
+        ? `Your bills are covered, but you're ${formatAUD(s.shortfallCents)} under your ${formatAUD(s.bufferCents)} buffer, so go easy until ${when}.`
+        : `Heads up: you're ${formatAUD(s.shortfallCents)} short of what's still to pay before payday on ${day}.`,
+  );
 
   return { greeting, lines, speech: [greeting, ...lines].join(" "), suggestion };
 }

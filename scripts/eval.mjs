@@ -257,7 +257,7 @@ await check("A. 'What can I spend until payday?' → $345 with the breakdown", a
   const r = seen(await chat("What can I spend until payday?"));
   const c = card(r, "safe_to_spend");
   expect(c?.safe.amountCents === 34500, JSON.stringify(c?.safe?.amountCents));
-  expect(c.safe.lines.map((l) => l.cents).join() === "150000,-50000,-12000,-3500,-30000,-20000", JSON.stringify(c.safe.lines));
+  expect(c.safe.lines.map((l) => l.cents).join() === "150000,-50000,-12000,-3500,-30000,54500,-20000", JSON.stringify(c.safe.lines));
   expect(/345/.test(r.reply), `reply: ${r.reply}`);
 });
 
@@ -286,6 +286,35 @@ await check("B. 'Why do you recommend saving $300?' → explains Alex's own goal
 await check("B. 'Change my minimum buffer to $300.' → updated, safe-to-spend $245", async () => {
   const c = card(seen(await chat("Change my minimum buffer to $300.")), "safe_to_spend");
   expect(c?.changed && c.safe.amountCents === 24500, JSON.stringify(c && [c.changed, c.safe.amountCents]));
+});
+
+await check("R11: a bill paid this month can't be paid again by mistake (rent and people unaffected)", async () => {
+  const [bill] = receipts(seen(await chat("Pay my $120 electricity bill")));
+  expect(bill?.status === "pending_approval", `first payment: ${JSON.stringify(bill && [bill.status, bill.reasons])}`);
+  const [again] = receipts(seen(await chat("Pay my $120 electricity bill")));
+  expect(again?.status === "blocked" && again.reasons.some((x) => /already waiting for your approval/.test(x)), `while waiting: ${JSON.stringify(again && again.reasons)}`);
+  expect((await approve(bill)).status === 200, "approve the first");
+  const [third] = receipts(seen(await chat("Pay my $120 electricity bill")));
+  expect(third?.status === "blocked" && third.reasons.some((x) => x.startsWith("Already paid this month: you paid BrightSpark Energy $120.00 on")), JSON.stringify(third && third.reasons));
+  const [mum] = receipts(seen(await chat("Send $50 to Mum")));
+  expect(mum?.status === "pending_approval", "people can be paid again");
+  return third.reasons.find((x) => x.startsWith("Already paid"));
+});
+
+await check("Money runs low: everything paid, $145 left → $0, worded as 'under your buffer' (not 'short')", async () => {
+  const plan = receipts(seen(await chat("I just got paid. Do my usual payday plan.")));
+  for (const a of plan) await approve(a);
+  // $1,500 − $920 plan = $580; spend $435 more to reach $145.
+  for (const id of ["quietpro-700", "studio-anc-2", "glass-kettle"]) await approve((await post("/api/shop/buy", { productId: id })).body.data);
+  const [toMum] = receipts(seen(await chat("Send $118 to Mum")));
+  await approve(toMum);
+  expect((await state()).accounts.find((a) => a.name === "Everyday").balanceCents === 14500, "Everyday should be $145.00");
+  const c = card(seen(await chat("What can I spend until payday?")), "safe_to_spend");
+  expect(c?.safe.amountCents === 0 && c.safe.status === "buffer" && c.safe.shortfallCents === 9000, JSON.stringify(c?.safe && [c.safe.amountCents, c.safe.status, c.safe.shortfallCents]));
+  expect(/under the \$200\.00 buffer you chose/.test(c.safe.explanation) && !/short/.test(c.safe.explanation), c.safe.explanation);
+  const b = (await demo("/api/demo/briefing")).body.data;
+  expect(b.lines.at(-1).startsWith("Your bills are covered, but you're $90.00 under your $200.00 buffer"), b.lines.at(-1));
+  return c.safe.explanation;
 });
 
 await check("Mandate: over the AI limit → blocked with the reason; payee not allowed → blocked", async () => {

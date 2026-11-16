@@ -169,3 +169,25 @@ test("R10 proportionate: an unfamiliar device alone → extra check only; a know
   assert.equal(paused.decision, "block");
   assert.equal(paused.rules[0].id, "R1");
 });
+
+test("R11 bills once a month: already paid this month → block with date; already waiting → block; none → nothing", () => {
+  const paid = assess(transfer(12000), { ...base, duplicateBill: { payeeName: "BrightSpark Energy", paid: { amountCents: 12000, on: "16 Nov" } } });
+  assert.equal(paid.decision, "block");
+  assert.ok(paid.reasons.includes("Already paid this month: you paid BrightSpark Energy $120.00 on 16 Nov. Bills are paid once a month, so this second payment is stopped."));
+  const waiting = assess(transfer(12000), { ...base, duplicateBill: { payeeName: "BrightSpark Energy", pending: true } });
+  assert.match(waiting.reasons.at(-1)!, /^A payment to BrightSpark Energy is already waiting for your approval\./);
+  assert.ok(!assess(transfer(12000), base).rules.some((r) => r.id === "R11"));
+});
+
+test("reasons read most-decisive first; R6 says 'more than half' when that's why it fired", () => {
+  const r = assess(transfer(12000), {
+    ...base,
+    sourceBalanceCents: 14500,
+    buffer: { bufferCents: 20000, balanceAfterCents: 2500 },
+    duplicateBill: { payeeName: "BrightSpark Energy", paid: { amountCents: 12000, on: "16 Nov" } },
+  });
+  assert.equal(r.decision, "block");
+  assert.match(r.reasons[0], /^Already paid this month/);
+  assert.ok(r.reasons.includes("This is more than half of what's in the account, so our team will check it with you first."));
+  assert.deepEqual(r.rules.map((x) => x.id), ["R6", "R9", "R11"], "the trace keeps evaluation order");
+});

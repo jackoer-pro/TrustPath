@@ -21,6 +21,9 @@ export function SafeToSpendCard({ card }: { card: SafeToSpendCardData }) {
       <p className="flex items-center gap-1 text-xs text-muted">
         <CalendarClock className="h-3.5 w-3.5" aria-hidden /> Next payday {until}
       </p>
+      {safe.status !== "ok" && !afford && (
+        <p className={`mt-3 rounded-md px-3 py-2 text-sm ${safe.status === "short" ? "bg-risk-critical-bg text-risk-critical" : "bg-risk-medium-bg text-risk-medium"}`}>{safe.explanation}</p>
+      )}
       {afford && (
         <p className={`mt-3 rounded-md px-3 py-2 text-sm font-medium ${afford.fits ? "bg-risk-low-bg text-risk-low" : "bg-risk-high-bg text-risk-high"}`}>{afford.sentence}</p>
       )}
@@ -28,17 +31,27 @@ export function SafeToSpendCard({ card }: { card: SafeToSpendCardData }) {
         <summary className="cursor-pointer font-medium text-navy">How we worked it out</summary>
         <table className="mt-2 w-full">
           <tbody>
-            {safe.lines.map((l) => (
-              <tr key={l.label} className="border-b border-line last:border-0">
-                <td className="py-1 pr-2">
-                  {l.label}
-                  {l.note && <span className="block text-xs text-muted">{l.note}</span>}
-                </td>
-                <td className={`py-1 text-right tabular-nums ${l.cents < 0 ? "text-ink" : "font-medium"}`}>
-                  {l.cents === 0 ? "✓" : `${l.cents < 0 ? "−" : ""}${formatAUD(Math.abs(l.cents))}`}
-                </td>
-              </tr>
-            ))}
+            {safe.lines.map((l) =>
+              l.subtotal ? (
+                <tr key={l.label} className="border-y-2 border-line">
+                  <td className="py-1.5 pr-2 font-medium">{l.label}</td>
+                  <td className={`py-1.5 text-right font-medium tabular-nums ${l.cents < 0 ? "text-risk-critical" : ""}`}>
+                    {l.cents < 0 ? "−" : ""}
+                    {formatAUD(Math.abs(l.cents))}
+                  </td>
+                </tr>
+              ) : (
+                <tr key={l.label} className="border-b border-line last:border-0">
+                  <td className="py-1 pr-2">
+                    {l.label}
+                    {l.note && <span className="block text-xs text-muted">{l.note}</span>}
+                  </td>
+                  <td className={`py-1 text-right tabular-nums ${l.cents < 0 ? "text-ink" : "font-medium"}`}>
+                    {l.note === "paid this pay cycle" ? "Paid" : `${l.cents < 0 ? "−" : ""}${formatAUD(Math.abs(l.cents))}`}
+                  </td>
+                </tr>
+              ),
+            )}
             <tr>
               <td className="pt-2 font-semibold">Safe to spend</td>
               <td className="pt-2 text-right font-semibold tabular-nums">{formatAUD(safe.amountCents)}</td>
