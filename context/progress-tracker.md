@@ -85,6 +85,7 @@ before it's built. What each unit contains and when it counts as done is in
 - [x] 29 In-app shop and deal finder
 - [x] 30–34 Personal context, AI mandate, Session Trust, "Why?", story slides
 - [x] 35 Morning briefing (spoken); CoachGuard removed from screens
+- [x] 39 Filming studio on /demo (camera bubble, workflow, recorder)
 
 ## Completed
 
@@ -245,6 +246,9 @@ before it's built. What each unit contains and when it counts as done is in
   and a "left after what's still to pay" line; R11 stops paying a biller twice in a calendar month;
   receipts list the decisive reason first; R6 says "more than half of what's in the account" when that's why.
   Migration 0005: fortnightly pay cycle (next payday = today + 14, expected pay $1,500). `npm run eval` 33.
+- **Unit 39 Filming studio** (Mon 16 Nov): `/demo` controls gain a Workflow list (Opening → Act 0–5 → Closing,
+  current step shows its cue), a presenter camera bubble fixed bottom-right, and **Record** (screen + camera + mic
+  → `.webm` download, all in the browser). Action buttons are a 2-column grid; the raw response log is collapsed.
 
 ## In Progress
 

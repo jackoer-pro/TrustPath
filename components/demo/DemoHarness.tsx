@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { saveStaffKey, useStaffKey } from "@/components/ops/staffKey";
 import { Slides, type SlideId } from "./Slides";
 import { speak } from "@/components/customer/speech";
+import { Studio } from "./Studio";
 
 // Filming harness (ui-context.md → Demo harness), target 1920×1080.
 const PHONE_W = 420;
@@ -73,7 +74,7 @@ export function DemoHarness() {
 
       <iframe key={`o${frames}`} src="/ops" title="Bank console" className="h-full min-w-0 flex-1 rounded-xl border border-line bg-surface" />
 
-      <aside className="flex w-[280px] shrink-0 flex-col gap-3 rounded-xl border border-line bg-surface p-4">
+      <aside className="flex w-[280px] shrink-0 flex-col gap-2.5 overflow-y-auto rounded-xl border border-line bg-surface p-4 pb-[234px]">
         <h1 className="font-display text-xl text-navy">Demo controls</h1>
         <label className="text-sm text-muted">
           Demo key
@@ -85,12 +86,13 @@ export function DemoHarness() {
             className="mt-1 h-9 w-full rounded-md border border-line bg-surface px-2 text-ink"
           />
         </label>
-        <p className="text-xs text-muted">Simulated events · the key is shared with the console&apos;s staff key.</p>
-        {ACTIONS.map((a) => (
-          <Button key={a.label} variant={a.path === "/api/demo/reset" ? "primary" : "secondary"} size="sm" disabled={busy !== null} onClick={() => run(a)}>
-            {busy === a.label ? "Working…" : a.label}
-          </Button>
-        ))}
+        <div className="grid grid-cols-2 gap-2">
+          {ACTIONS.map((a) => (
+            <Button key={a.label} variant={a.path === "/api/demo/reset" ? "primary" : "secondary"} size="sm" className="px-2 text-[13px] leading-tight" disabled={busy !== null} onClick={() => run(a)}>
+              {busy === a.label ? "Working…" : a.label}
+            </Button>
+          ))}
+        </div>
         <div className="flex gap-2">
           <Button size="sm" variant="ghost" className="flex-1 border border-line" onClick={() => setSlide("opening")}>
             Opening slide
@@ -99,9 +101,13 @@ export function DemoHarness() {
             Closing slide
           </Button>
         </div>
-        <pre aria-live="polite" className="min-h-0 flex-1 overflow-auto rounded-md bg-sunken p-2 font-mono text-[11px] leading-snug whitespace-pre-wrap text-ink">
-          {last || "Responses appear here."}
-        </pre>
+        <Studio />
+        <details className="text-xs text-muted">
+          <summary className="cursor-pointer">Last response</summary>
+          <pre aria-live="polite" className="mt-1 max-h-40 overflow-auto rounded-md bg-sunken p-2 font-mono text-[11px] leading-snug whitespace-pre-wrap text-ink">
+            {last || "Responses appear here."}
+          </pre>
+        </details>
       </aside>
       {slide && <Slides slide={slide} onClose={() => setSlide(null)} />}
     </div>
