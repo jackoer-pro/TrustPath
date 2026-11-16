@@ -9,7 +9,7 @@ import { DEMO_PROFILE_ID, EVERYDAY_ACCOUNT_ID } from "@/lib/banking/constants";
 import { prepareTransfer, type PreparedAction } from "@/lib/banking/actions";
 import { safeToSpend, type ItemStatus, type SafeToSpend } from "./safe-to-spend";
 import { buildBriefing } from "./briefing";
-import { activity, learn, type CardEvent, type Txn } from "./insights";
+import { activity, learn, type CardEvent, type Stopped, type Txn } from "./insights";
 
 export type Preferences = {
   nextPayday: string;
@@ -293,13 +293,23 @@ export async function setPayeeBirthday(id: string, birthday: string | null) {
 export async function getInsights() {
   const sb = db();
   const since = new Date(Date.now() - 400 * DAY).toISOString();
-  const [ctx, txns, cards, payees] = await Promise.all([
+  const [ctx, txns, cards, payees, stopped] = await Promise.all([
     getFinancialContext(),
     sb.from("transactions").select("amount_cents, counterparty, description, kind, created_at, accounts!inner(name, profile_id)").eq("accounts.profile_id", DEMO_PROFILE_ID).gte("created_at", since).order("created_at", { ascending: false }).limit(200),
     sb.from("card_events").select("merchant, amount_cents, decision, created_at, cards!inner(profile_id)").eq("cards.profile_id", DEMO_PROFILE_ID).order("created_at", { ascending: false }).limit(100),
     sb.from("payees").select("name, aliases, birthday").eq("profile_id", DEMO_PROFILE_ID).not("birthday", "is", null),
+    // Stopped payments: held/blocked, or cancelled after a simulated attack (the customer said "secure my account").
+    sb.from("pending_actions").select("amount_cents, status, origin, recipient_label, merchant, created_at, payees(name)").eq("profile_id", DEMO_PROFILE_ID).in("status", ["held", "blocked", "cancelled"]).gte("created_at", new Date(Date.now() - DAY).toISOString()),
   ]);
-  for (const r of [txns, cards, payees]) if (r.error) throw r.error;
+  for (const r of [txns, cards, payees, stopped]) if (r.error) throw r.error;
+  const s: Stopped[] = stopped.data!
+    .filter((r) => r.status !== "cancelled" || String(r.origin).startsWith("simulated"))
+    .map((r) => ({
+      label: (r.payees as unknown as { name: string } | null)?.name ?? r.recipient_label ?? r.merchant ?? "Unknown recipient",
+      amountCents: Number(r.amount_cents),
+      status: r.status as Stopped["status"],
+      at: r.created_at,
+    }));
   const t: Txn[] = txns.data!.map((r) => ({
     amountCents: Number(r.amount_cents),
     counterparty: r.counterparty,
@@ -317,7 +327,7 @@ export async function getInsights() {
     accounts: ctx.accounts,
     safe: { amountCents: ctx.safe.amountCents, status: ctx.safe.status, nextPayday: ctx.safe.nextPayday },
     knows: learn({ now: new Date().toISOString(), today: sydneyDate(), txns: t, cardEvents: c, birthdays, commitments: ctx.commitments, nextPayday: ctx.preferences.nextPayday }),
-    activity: activity(t, c),
+    activity: activity(t, c, s),
   };
 }
 export type Insights = Awaited<ReturnType<typeof getInsights>>;

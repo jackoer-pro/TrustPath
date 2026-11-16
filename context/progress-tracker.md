@@ -258,6 +258,9 @@ before it's built. What each unit contains and when it counts as done is in
   live **Recent activity** (transactions + card events, declined attempts in red), chat on the right, nav in
   the header. `/api/customer/insights`. **/demo/remote**: phone-sized scenario buttons for a helper's device;
   the laptop speaks a briefing it receives once the page has had a click. Phones unchanged.
+- **Unit 43 Laptop polish** (Mon 16 Nov): one clear story — greeting + protection status pill, a single balance
+  bar, "What TrustPath has learned" as a calm list, "Live activity" that now also shows held/blocked payments
+  (unfamiliar device $2,500, hijacked-AI $500) next to declined card attempts. Chat column 440 px below xl.
 
 ## In Progress
 

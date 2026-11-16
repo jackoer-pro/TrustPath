@@ -258,10 +258,13 @@ The page has three columns:
 ### Laptop view (customer app at lg+, ≥ 1024 px)
 
 - Full screen, no phone frame; header holds the logo and Home / Shop / Protect / Me nav (bottom tabs hidden).
-- Left (flexible, canvas): three cards — Everyday, Goal Saver, Safe to spend (teal); then two columns:
-  **TrustPath knows you** (icon tiles, birthday tile accented in brand red) and **Recent activity**
-  (newest first, declined rows on risk-critical-bg with a struck-through amount, "New" badge < 2 min).
-- Right: the page content (chat etc.) at max 520 px with a left border. Account chips in the chat column are hidden.
+- Left (flexible, canvas), one story top to bottom: greeting (display serif) + Sydney date, with a status pill
+  (green "Protected · watching every payment" / red "N payments stopped today"); one white balance bar split
+  in three (Everyday, Goal Saver, Safe to spend in teal with "until payday · date"); then two white panels:
+  **What TrustPath has learned** (divided list, 36 px tinted icons, birthday first in brand red) and
+  **Live activity** (newest first; declined / held / blocked rows tinted risk-critical-bg with a red chip and
+  struck amount; new rows rise in, motion-safe). Panels: radius 16, shadow 0 1px 3px.
+- Right: the page content (chat etc.) at max 440 px (520 px at xl) with a left border. Account chips in the chat column are hidden.
 
 ### Demo remote (`/demo/remote`)
 

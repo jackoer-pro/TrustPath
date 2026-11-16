@@ -16,7 +16,9 @@ export type InsightInput = {
   nextPayday: string;
 };
 export type Insight = { id: string; title: string; detail: string };
-export type Activity = { id: string; at: string; label: string; detail: string; amountCents: number; status?: "declined" | "held" };
+export type Activity = { id: string; at: string; label: string; detail: string; amountCents: number; status?: "declined" | "held" | "blocked" };
+/** A payment TrustPath stopped before any money moved (held for review, blocked, or cancelled after a simulated attack). */
+export type Stopped = { label: string; amountCents: number; status: "held" | "blocked" | "cancelled"; at: string };
 
 const DAY = 86_400_000;
 const money = (c: number) => formatAUD(c).replace(/\.00$/, "");
@@ -61,16 +63,24 @@ export function learn(i: InsightInput): Insight[] {
   }
   if (recent.length) {
     const max = Math.max(...recent.map((e) => e.amountCents));
-    out.push({ id: "usual", title: `Your biggest card payment this month: ${formatAUD(max)}`, detail: "Anything far above that, or at a shop you've never used, gets a second look." });
+    out.push({ id: "usual", title: `Card spending tops out around ${money(max)}`, detail: "Anything far above that, or at a shop you've never used, gets a second look." });
   }
 
   out.push({ id: "device", title: "You bank from your registered iPhone", detail: "A new device or a new payee asking for a big amount is held until you confirm." });
   return out;
 }
 
-/** One newest-first list: account transactions plus card activity (card rows in `txns` are already in card events). */
-export function activity(txns: Txn[], cardEvents: CardEvent[], limit = 25): Activity[] {
+/** One newest-first list: transactions, card activity (card rows in `txns` are already in card events) and stopped payments. */
+export function activity(txns: Txn[], cardEvents: CardEvent[], stopped: Stopped[] = [], limit = 25): Activity[] {
   const rows: Activity[] = [
+    ...stopped.map((s, n) => ({
+      id: `s${n}`,
+      at: s.at,
+      label: s.label,
+      detail: s.status === "held" ? "Payment · waiting for your answer" : s.status === "cancelled" ? "Payment · cancelled" : "Payment · not from you",
+      amountCents: -s.amountCents,
+      status: s.status === "held" ? ("held" as const) : ("blocked" as const),
+    })),
     ...txns
       .filter((t) => t.kind !== "card")
       .map((t, n) => ({ id: `t${n}`, at: t.at, label: t.counterparty ?? t.description, detail: `${t.description} · ${t.account}`, amountCents: t.amountCents })),
@@ -78,7 +88,7 @@ export function activity(txns: Txn[], cardEvents: CardEvent[], limit = 25): Acti
       id: `c${n}`,
       at: e.at,
       label: e.merchant,
-      detail: e.decision === "approved" ? "Card" : e.decision === "declined" ? "Card · declined by TrustPath" : "Card · held for review",
+      detail: e.decision === "approved" ? "Card" : e.decision === "declined" ? "Card · unusual for you" : "Card · checking",
       amountCents: -e.amountCents,
       ...(e.decision === "declined" ? { status: "declined" as const } : e.decision !== "approved" ? { status: "held" as const } : {}),
     })),
