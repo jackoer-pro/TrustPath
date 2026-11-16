@@ -27,7 +27,7 @@ export default function CustomerLayout({ children }: LayoutProps<"/">) {
         </header>
         <main className="flex min-h-0 flex-1 flex-col">{children}</main>
         <TabBar />
-        <p className="shrink-0 px-4 pb-2 text-center text-[10px] leading-tight text-muted">
+        <p className="shrink-0 px-4 pb-2 text-center text-[11px] leading-tight text-muted">
           Concept prototype for the Westpac Innovation and Coding Competition 2026 · Simulated data
         </p>
       </div>

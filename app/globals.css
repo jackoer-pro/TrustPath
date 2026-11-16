@@ -1,18 +1,21 @@
 @import "tailwindcss";
 
 @theme inline {
-  --font-sans: var(--font-geist-sans);
+  /* GEL body font stack (style-config typography.css): the platform's own UI font, e.g. SF on Apple devices. */
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
   --font-mono: var(--font-geist-mono);
   --font-display: var(--font-source-serif);
 }
 
 @theme {
-  --color-canvas: #f4f3f0;
+  /* Neutrals from Westpac GEL: background-pale #f5f5f6, border-muted-soft #dedee1, text-body #161619.
+     Muted text stays darker than GEL's #706f7c so it keeps 4.5:1 on the pale background. */
+  --color-canvas: #ebebee;
   --color-surface: #ffffff;
-  --color-sunken: #eeedea;
-  --color-line: #dedcd7;
-  --color-ink: #1b1a2e;
-  --color-muted: #5e6070;
+  --color-sunken: #f5f5f6;
+  --color-line: #dedee1;
+  --color-ink: #161619;
+  --color-muted: #5e5d69;
   --color-brand: #da1710;
   --color-navy: #1f1c4f;
   --color-navy-strong: #15133a;
@@ -25,11 +28,13 @@
   --color-risk-low-bg: #e6f4ea;
   --color-risk-medium: #9a5b00;
   --color-risk-medium-bg: #fff4dc;
-  --color-risk-high: #c2410c;
+  /* GEL reserved warning / danger. (GEL success #008000 fails 4.5:1 on tinted badges, so low keeps a deeper green.) */
+  --color-risk-high: #c53b00;
   --color-risk-high-bg: #ffede3;
-  --color-risk-critical: #a1120d;
+  --color-risk-critical: #c40000;
   --color-risk-critical-bg: #fde7e6;
-  --color-focus: #1d6fd8;
+  /* GEL --border-focus */
+  --color-focus: #bc57eb;
 
   --animate-rise: rise 200ms ease-out;
   /* New console rows: start on --flash (a risk-*-bg) and fade to the row's own background. */
@@ -47,9 +52,23 @@
   }
 }
 
+/* GEL focus-outline: 2px solid, 3px offset. */
 :focus-visible {
   outline: 2px solid var(--color-focus);
-  outline-offset: 2px;
+  outline-offset: 3px;
+}
+
+/* Browser surfaces carry the palette too. */
+::selection {
+  background: color-mix(in srgb, var(--color-navy) 18%, transparent);
+  color: var(--color-ink);
+}
+html {
+  caret-color: var(--color-navy);
+  accent-color: var(--color-navy);
+  scrollbar-color: color-mix(in srgb, var(--color-navy) 30%, transparent) transparent;
+  -webkit-tap-highlight-color: transparent;
+  text-size-adjust: 100%;
 }
 
 @media (prefers-reduced-motion: reduce) {

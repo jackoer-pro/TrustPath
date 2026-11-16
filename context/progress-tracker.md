@@ -237,6 +237,9 @@ before it's built. What each unit contains and when it counts as done is in
 - **Unit 36** (Mon 16 Nov): saying "Good morning" / "What's on today?" in chat shows the
   briefing (tool `get_briefing`, offline too). Full manual + automated test script in
   `context/test-script.md`. `npm run eval` 31 cases.
+- **Unit 37 Polish** (Mon 16 Nov): chat replies render bullets/bold instead of raw Markdown; tokens,
+  focus ring and body font aligned to Westpac GEL; 44pt targets and 11pt minimum text (Apple HIG);
+  payday plan idempotent within a turn. See `ui-context.md` → Westpac GEL and Apple HIG alignment.
 
 ## In Progress
 

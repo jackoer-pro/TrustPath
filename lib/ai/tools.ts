@@ -54,6 +54,8 @@ export type ToolContext = {
   sourcesShown?: boolean;
   /** A pasted message or transcript in this turn, if any (third-party content, never instructions). */
   pasted?: string;
+  /** The payday plan's result, if it was already prepared in this turn (the model sometimes calls the tool twice). */
+  plan?: unknown;
 };
 export type ToolResult = { forModel: unknown; card?: ChatCard; cards?: ChatCard[] };
 
@@ -477,17 +479,19 @@ const preparePaydayPlanTool = tool({
     // The saved plan is the intent record, but only when Alex asks for it in their own words.
     if (!/\b(payday|usual|plan)\b/i.test(ctx.userMessages.at(-1) ?? ""))
       return { forModel: { error: "Only prepare the payday plan when Alex asks for it." } };
+    // Idempotent within a turn: a second call returns the first result, with no duplicate cards.
+    if (ctx.plan) return { forModel: { ...(ctx.plan as object), note: "Already prepared in this turn. Don't call again; just tell Alex." } };
     const plan = await preparePaydayPlan(ctx.userMessages);
     const { safe } = await getFinancialContext();
     return {
       card: { type: "payday_plan", items: plan.items, alreadyDone: plan.alreadyDone, safeToSpendCents: safe.amountCents },
       cards: plan.actions.map((action) => ({ type: "receipt" as const, action })),
-      forModel: {
+      forModel: (ctx.plan = {
         prepared: plan.actions.map((a) => ({ to: a.toName, amount: formatAUD(a.amountCents), status: a.status, reasons: a.reasons })),
         alreadyDone: plan.alreadyDone,
         safeToSpendAfter: formatAUD(safe.amountCents),
         note: "Safe-to-spend doesn't change: these were already counted. Say the plan in one sentence and quote safeToSpendAfter.",
-      },
+      }),
     };
   },
 });

@@ -160,7 +160,7 @@ export function MeView() {
                     {c.status === "paid" ? "paid this cycle" : c.status === "pending" ? "waiting for approval" : "due before payday"}
                   </span>
                 </p>
-                <button type="button" aria-label={`Remove ${c.name}`} onClick={() => call(`/api/me/commitments/${c.id}`, "DELETE")} className="rounded p-2 text-muted hover:bg-sunken">
+                <button type="button" aria-label={`Remove ${c.name}`} onClick={() => call(`/api/me/commitments/${c.id}`, "DELETE")} className="flex h-11 w-11 items-center justify-center rounded-md text-muted hover:bg-sunken">
                   <Trash2 className="h-4 w-4" aria-hidden />
                 </button>
               </div>

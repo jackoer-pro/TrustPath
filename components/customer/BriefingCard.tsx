@@ -16,7 +16,7 @@ export function BriefingCard({ card, onSend }: { card: BriefingCardData; onSend:
           <Sun className="h-5 w-5" aria-hidden />
           {card.greeting}
         </p>
-        <button type="button" aria-label="Listen" onClick={() => speak(card.speech)} className="rounded-full p-2 text-trust hover:bg-surface/60">
+        <button type="button" aria-label="Listen" onClick={() => speak(card.speech)} className="-m-2 flex h-11 w-11 items-center justify-center rounded-full text-trust hover:bg-surface/60">
           <Volume2 className="h-4 w-4" aria-hidden />
         </button>
       </div>
