@@ -57,7 +57,7 @@ up 23%, mapped to what TrustPath does). Click to close.
 | `Can I afford these headphones for $280?`              | "Yes: $280.00 fits. You'd still have $15.00 safe to spend until payday."                                          |
 | **Me** tab                                              | My Financial Context (Mum's birthday, commitments, savings goal, buffer, all editable) and **My AI Permissions** |
 | Me → "Most the assistant can prepare at once" → **500** → Save; Home: `Send $600 to Mum` | Red Blocked: "This is above the $500.00 limit you set for your assistant…" (enforced by the bank, not the screen) |
-| `I just got paid. Do my usual payday plan.`            | Payday plan card (Rent → Sam Patel $500, Electricity → BrightSpark $120, Savings → Goal Saver $300 = $920) + 3 Trust Receipts |
+| Opening card **Still to pay before payday** (shows by itself on open) → **Get them ready** (or type `I just got paid. Do my usual payday plan.`) | Payday plan card (Rent → Sam Patel $500, Electricity → BrightSpark $120, Savings → Goal Saver $300 = $920) + 3 Trust Receipts |
 | Tap **Why?** on a receipt                              | What was asked: *Your saved payday plan* · session · payment · checks · decision: "Decided by the bank's rules, not the AI" |
 | Approve all three with the PIN                          | Everyday **$530.00**                                                                                             |
 | `What can I spend until payday?`                       | **Still $295.00**: rent, power and savings now show "paid this pay cycle" (real numbers, not AI-made)            |

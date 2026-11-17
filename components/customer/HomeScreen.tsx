@@ -10,6 +10,7 @@ import type { CustomerState } from "@/lib/banking/state";
 import { AccountSummary } from "./AccountSummary";
 import { AlertBanner } from "./AlertBanner";
 import { BriefingCard } from "./BriefingCard";
+import { BillsReminder } from "./BillsReminder";
 import { DealsCard } from "./DealsCard";
 import { PaydayPlanCard } from "./PaydayPlanCard";
 import { SafeToSpendCard } from "./SafeToSpendCard";
@@ -249,6 +250,7 @@ export function HomeScreen() {
           messages={thread}
           pending={pending}
           onSuggestion={send}
+          opening={<BillsReminder onSend={send} />}
           renderCard={(c) =>
             c.type === "shield" ? (
               <ShieldCard card={c} />
