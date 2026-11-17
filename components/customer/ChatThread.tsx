@@ -37,11 +37,14 @@ export function ChatThread({
   pending,
   onSuggestion,
   renderCard,
+  opening,
 }: {
   messages: ChatMsg[];
   pending: boolean;
   onSuggestion: (text: string) => void;
   renderCard: (card: ChatCard) => ReactNode;
+  /** Something the assistant brings up by itself when the app opens (e.g. bills before payday). */
+  opening?: ReactNode;
 }) {
   const end = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -52,6 +55,7 @@ export function ChatThread({
   return (
     <div aria-live="polite" className="flex-1 space-y-4 overflow-y-auto p-4">
       <AssistantBubble>Hi Alex, how can I help?</AssistantBubble>
+      {opening}
 
       {messages.length === 0 && (
         <div className="flex flex-wrap gap-2">

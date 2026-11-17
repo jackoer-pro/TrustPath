@@ -261,6 +261,9 @@ before it's built. What each unit contains and when it counts as done is in
 - **Unit 43 Laptop polish** (Mon 16 Nov): one clear story — greeting + protection status pill, a single balance
   bar, "What TrustPath has learned" as a calm list, "Live activity" that now also shows held/blocked payments
   (unfamiliar device $2,500, hijacked-AI $500) next to declined card attempts. Chat column 440 px below xl.
+- **Unit 44 Bills reminder** (Tue 17 Nov): when the app opens, the chat brings up what's still to pay before
+  payday (rent, electricity, savings, total) without being asked; **Get them ready** runs the payday plan
+  (3 Trust Receipts + PIN). Hidden once they're prepared or paid. `components/customer/BillsReminder.tsx`.
 
 ## In Progress
 
