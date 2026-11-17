@@ -4,7 +4,7 @@
  
 TrustPath is an AI banking assistant with an independent trust layer. It was built by **Team 4, Griffith University**, for the **Westpac Innovation and Coding Competition 2026**, whose theme was *"AI and what it means for Banking"*.
  
-**Live demo:** https://trust-path-five.vercel.app · **Video:** [YouTube link]
+**Live demo:** https://trust-path-five.vercel.app · **Video:** https://www.youtube.com/watch?v=_jDUYwDjlIQ
  
 > ⚠️ This is a concept prototype. It uses mock data only, and device checks, card events and checkout are all simulated. No real money moves.
  
